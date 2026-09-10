@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Meu-Suíço Foods — Cardápio Digital</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,500;0,600;0,700;1,500&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<!-- PWA Config Header -->
+<link rel="manifest" href="manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#C8202B">
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js');
+  }
+</script>
+
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
+
+<style>
+  :root{
+    --red:#C8202B; --red-dark:#8E141C; --red-light:#FBEAEA;
+    --ink:#241F1D; --grey:#7A7370; --paper:#FFFFFF; --line:#F0D6D5; --white:#FFFFFF;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0; padding:0; height:100%; overscroll-behavior:none;}
+  body{
+    background:var(--paper); color:var(--ink); font-family:'Inter',sans-serif;
+    display:flex; flex-direction:column; height:100vh; overflow:hidden; user-select:none;
+  }
+  h1,h2,h3,.display{font-family:'Fraunces',serif;}
+
+  header.topbar{
+    background:var(--red); color:var(--white); padding:14px 18px;
+    display:flex; align-items:center; justify-space-between; gap:12px; flex-shrink:0;
+    box-shadow:0 2px 0 rgba(0,0,0,0.08); z-index:20;
+  }
+  .brand{display:flex; align-items:center; gap:10px;}
+  .brand-logo{width:42px; height:42px; border-radius:9px; object-fit:cover; flex-shrink:0;}
+  .brand .name{font-size:22px; font-weight:600; font-style:italic; letter-spacing:0.2px;}
+  .brand .tag{font-size:11px; opacity:0.8; font-family:'Inter';}
+  .table-field{
+    display:flex; align-items:center; gap:8px; background:rgba(255,255,255,0.14);
+    border:1px solid rgba(255,255,255,0.3); border-radius:10px; padding:6px 8px 6px 12px;
+  }
+  .table-field label{font-size:12px; opacity:0.85;}
+  .table-field input{
+    width:52px; background:transparent; border:none; color:var(--white);
+    font-family:'Fraunces'; font-size:18px; font-weight:600; text-align:center; outline:none;
+  }
+  .top-actions{display:flex; align-items:center; gap:10px;}
+  .icon-btn{
+    background:rgba(255,255,255,0.14); border:1px solid rgba(255,255,255,0.3); color:var(--white);
+    border-radius:10px; padding:9px 14px; font-family:'Inter'; font-size:13px; font-weight:600;
+    display:flex; align-items:center; gap:6px; cursor:pointer;
+  }
+  .cart-btn{
+    background:var(--white); border:1px solid var(--white); color:var(--red);
+    border-radius:10px; padding:9px 16px; font-family:'Inter'; font-size:14px; font-weight:700;
+    display:flex; align-items:center; gap:8px; cursor:pointer; position:relative;
+  }
+  .cart-count{
+    background:var(--red-dark); color:#fff; font-size:11px; font-weight:800; border-radius:20px;
+    min-width:18px; height:18px; display:flex; align-items:center; justify-content:center; padding:0 5px;
+  }
+
+  nav.cats{
+    display:flex; gap:8px; padding:12px 16px; overflow-x:auto;
+    background:var(--red-light); border-bottom:1px solid var(--line); flex-shrink:0;
+  }
+  nav.cats::-webkit-scrollbar{display:none;}
+  .cat-btn{
+    flex-shrink:0; padding:9px 18px; border-radius:999px; border:1.5px solid var(--line);
+    background:var(--paper); color:var(--ink); font-family:'Inter'; font-size:14px; font-weight:600; cursor:pointer;
+  }
+  .cat-btn.active{ background:var(--red); border-color:var(--red); color:var(--white); }
+
+  main{flex:1; overflow-y:auto; padding:18px;}
+  .section-title{font-size:24px; font-weight:600; margin:2px 0 14px 2px;}
+  .grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(230px,1fr)); gap:14px;}
+  .item-card{
+    background:var(--paper); border:1px solid var(--line); border-radius:14px;
+    padding:14px; display:flex; flex-direction:column; gap:8px;
+  }
+  .item-top{display:flex; gap:10px; align-items:flex-start;}
+  .item-badge{
+    width:38px; height:38px; border-radius:10px; background:var(--red); color:var(--white);
+    display:flex; align-items:center; justify-content:center; font-family:'Fraunces'; font-weight:600; font-size:16px; flex-shrink:0;
+  }
+  .item-name{font-size:16px; font-weight:600; line-height:1.25;}
+  .item-desc{font-size:12.5px; color:var(--grey); line-height:1.4; min-height:32px;}
+  .item-bottom{display:flex; align-items:center; justify-content:space-between; margin-top:auto; padding-top:6px;}
+  .item-price{font-family:'Fraunces'; font-weight:700; font-size:17px; color:var(--red-dark);}
+  .add-btn{
+    background:var(--red); color:var(--white); border:none; border-radius:9px;
+    padding:9px 16px; font-weight:700; font-size:13px; cursor:pointer;
+  }
+  .stepper{display:flex; align-items:center; gap:10px; background:var(--red); border-radius:9px; padding:4px 6px;}
+  .stepper button{
+    width:26px; height:26px; border-radius:6px; border:none; background:rgba(255,255,255,0.2);
+    color:var(--white); font-size:16px; font-weight:700; cursor:pointer; line-height:1;
+  }
+  .stepper span{color:var(--white); font-weight:700; min-width:16px; text-align:center; font-size:14px;}
+
+  .overlay{position:fixed; inset:0; background:rgba(36,31,29,0.45); z-index:30; display:none;}
+  .overlay.show{display:block;}
+  .sheet{
+    position:fixed; right:0; top:0; bottom:0; width:min(400px, 92vw);
+    background:var(--paper); z-index:31; display:flex; flex-direction:column;
+    transform:translateX(100%); transition:transform 0.22s ease; box-shadow:-8px 0 24px rgba(0,0,0,0.15);
+  }
+  .sheet.show{transform:translateX(0);}
+  .sheet-header{background:var(--red); color:var(--white); padding:18px; display:flex; align-items:center; justify-content:space-between; flex-shrink:0;}
+  .sheet-header h2{margin:0; font-size:20px; font-weight:600;}
+  .close-x{background:rgba(255,255,255,0.16); border:none; color:var(--white); width:32px; height:32px; border-radius:8px; font-size:16px; cursor:pointer;}
+  .sheet-body{flex:1; overflow-y:auto; padding:14px 18px;}
+  .cart-empty{text-align:center; color:var(--grey); padding:60px 20px; font-size:14px;}
+  .cart-row{display:flex; align-items:center; gap:10px; padding:12px 0; border-bottom:1px solid var(--line);}
+  .cart-row-info{flex:1;}
+  .cart-row-name{font-weight:600; font-size:14.5px;}
+  .cart-row-price{font-size:12.5px; color:var(--grey); margin-top:2px;}
+  .cart-row-total{font-family:'Fraunces'; font-weight:700; color:var(--red-dark); font-size:14px; min-width:62px; text-align:right;}
+  .remove-btn{background:none; border:none; color:var(--red-dark); font-size:18px; cursor:pointer; padding:4px;}
+  .notes{
+    width:100%; margin-top:14px; border:1.5px solid var(--line); border-radius:10px;
+    padding:10px 12px; font-family:'Inter'; font-size:13px; resize:none; background:var(--paper); color:var(--ink);
+  }
+  
+  .pay-option-title { font-size:13px; font-weight:700; margin-top:14px; color:var(--grey); }
+  .pay-options { display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:8px; }
+  .pay-card {
+    border: 1.5px solid var(--line); border-radius: 10px; padding: 12px 10px; text-align: center;
+    cursor: pointer; font-size: 13px; font-weight: 700; color: var(--ink);
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+  }
+  .pay-card.active { border-color: var(--red); background: var(--red-light); color: var(--red-dark); }
+
+  .sheet-footer{padding:16px 18px 18px; border-top:1px solid var(--line); flex-shrink:0; background:var(--paper);}
+  .total-row{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:12px;}
+  .total-row .label{font-size:14px; color:var(--grey);}
+  .total-row .value{font-family:'Fraunces'; font-size:24px; font-weight:700; color:var(--red-dark);}
+  .send-btn{
+    width:100%; background:var(--red); border:1px solid var(--red-dark); color:var(--white);
+    padding:15px; border-radius:11px; font-weight:800; font-size:15.5px; cursor:pointer;
+  }
+  .send-btn:disabled{opacity:0.4; cursor:not-allowed;}
+
+  .confirm-screen{
+    position:fixed; inset:0; z-index:40; background:var(--red); color:var(--white);
+    display:none; flex-direction:column; align-items:center; justify-content:center;
+    text-align:center; padding:24px; overflow-y:auto;
+  }
+  .confirm-screen.show{display:flex;}
+  .confirm-screen .label-top{font-size:14px; letter-spacing:0.5px; opacity:0.85; margin-bottom:2px;}
+  .senha-circle{
+    width:120px; height:120px; border-radius:50%; background:var(--white); color:var(--red);
+    display:flex; align-items:center; justify-content:center; font-family:'Fraunces';
+    font-weight:700; font-size:48px; margin:10px 0 16px; border:6px solid rgba(255,255,255,0.35);
+  }
+  .confirm-screen h2{font-size:22px; margin:0 0 6px; font-weight:600;}
+  .confirm-screen p{opacity:0.9; font-size:14px; margin:0 0 16px; max-width:340px; line-height:1.4;}
+  
+  .pay-box {
+    background: var(--white); color: var(--ink); border-radius: 14px; padding: 18px;
+    width: min(340px, 100%); margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  }
+  .pay-box-title { font-weight: 700; font-size: 15px; margin-bottom: 8px; color: var(--red-dark); }
+  .qr-code-img { width: 180px; height: 180px; margin: 8px 0; border-radius: 8px; border: 1px solid #EEE; }
+  .pay-instructions { font-size: 13px; color: var(--grey); line-height: 1.4; margin: 6px 0; }
+  .price-highlight { font-family: 'Fraunces'; font-weight: 700; font-size: 22px; color: var(--red-dark); margin: 6px 0; }
+
+  .confirm-screen button.primary-btn{
+    background:var(--white); color:var(--red); border:none; padding:13px 28px;
+    border-radius:10px; font-weight:700; font-size:14.5px; cursor:pointer;
+  }
+
+  .orders-view{padding:18px;}
+  .order-card{background:var(--paper); border:1px solid var(--line); border-radius:14px; padding:16px; margin-bottom:12px;}
+  .order-card-top{display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;}
+  .order-senha{font-family:'Fraunces'; font-weight:700; font-size:16px; color:var(--red-dark);}
+  .order-time{font-size:12px; color:var(--grey);}
+  .order-items{font-size:13px; color:var(--ink); line-height:1.7; margin:8px 0;}
+  .order-status{display:inline-block; font-size:12px; font-weight:700; padding:5px 12px; border-radius:999px;}
+  .status-preparo{background:var(--red-light); color:var(--red-dark);}
+  .order-footer{display:flex; justify-content:space-between; align-items:center; margin-top:10px;}
+  .orders-empty{text-align:center; color:var(--grey); padding:60px 20px; font-size:14px;}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <img src="data:image/jpeg;base64,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" alt="Meu-Suíço Foods" class="brand-logo">
+    <div>
+      <div class="name">Meu-Suíço Foods</div>
+      <span class="tag">cardápio digital</span>
+    </div>
+  </div>
+  <div class="table-field">
+    <label>Mesa</label>
+    <input id="tableInput" type="text" inputmode="numeric" maxlength="3" placeholder="—">
+  </div>
+  <div class="top-actions">
+    <button class="icon-btn" id="ordersBtn">Meus pedidos</button>
+    <button class="cart-btn" id="cartBtn">
+      Carrinho <span class="cart-count" id="cartCount">0</span>
+    </button>
+  </div>
+</header>
+
+<nav class="cats" id="catsNav"></nav>
+
+<main id="mainMenu">
+  <div id="menuContent"></div>
+</main>
+
+<main id="mainOrders" class="orders-view" style="display:none;"></main>
+
+<div class="overlay" id="overlay"></div>
+<div class="sheet" id="cartSheet">
+  <div class="sheet-header">
+    <h2>Seu pedido</h2>
+    <button class="close-x" id="closeCart">✕</button>
+  </div>
+  <div class="sheet-body">
+    <div id="cartList"></div>
+    <textarea class="notes" id="orderNotes" rows="2" placeholder="Observações (ex.: sem cebola...)"></textarea>
+
+    <div class="pay-option-title">Forma de Pagamento</div>
+    <div class="pay-options">
+      <div class="pay-card active" id="payPix" data-method="pix">
+        <span>📱 Pix</span>
+        <small style="opacity:0.7;">Pague na tela</small>
+      </div>
+      <div class="pay-card" id="payCard" data-method="card">
+        <span>💳 Cartão</span>
+        <small style="opacity:0.7;">Pague no Balcão</small>
+      </div>
+    </div>
+  </div>
+  <div class="sheet-footer">
+    <div class="total-row">
+      <span class="label">Total</span>
+      <span class="value" id="cartTotal">R$ 0,00</span>
+    </div>
+    <button class="send-btn" id="sendBtn" disabled>Enviar pedido</button>
+  </div>
+</div>
+
+<div class="confirm-screen" id="confirmScreen">
+  <div class="label-top">SUA SENHA DE ATENDIMENTO</div>
+  <div class="senha-circle" id="senhaNumber">00</div>
+  <h2>Pedido Enviado!</h2>
+  <p id="confirmDetail">Guarde este número. Ele será chamado quando seu pedido estiver pronto.</p>
+
+  <div class="pay-box" id="payBox"></div>
+
+  <button class="primary-btn" id="newOrderBtn">Fazer novo pedido</button>
+</div>
+
+<script>
+const MENU = [
+  { cat:"Bebidas", items:[
+    {id:"b1", name:"Água Normal", desc:"", price:4.00},
+    {id:"b2", name:"Água com Gás", desc:"", price:4.00},
+    {id:"b3", name:"Soda Italiana Maçã Verde", desc:"500ml", price:15.00},
+    {id:"b4", name:"Soda Italiana Morango", desc:"500ml", price:15.00},
+    {id:"b5", name:"Soda Italiana Gengibre", desc:"500ml", price:15.00},
+    {id:"b6", name:"Soda Italiana Limão Siciliano", desc:"500ml", price:15.00},
+    {id:"b7", name:"Soda Italiana Jabuticaba", desc:"500ml", price:15.00},
+    {id:"b8", name:"Soda Italiana Tangerina", desc:"500ml", price:15.00},
+  ]},
+  { cat:"Crepe Francês", items:[
+    {id:"cf1", name:"Queijo e Orégano", desc:"", price:25.00},
+    {id:"cf2", name:"Queijo c/ Milho e Requeijão", desc:"", price:25.00},
+    {id:"cf3", name:"Pizza", desc:"Queijo, tomate, orégano e requeijão", price:25.00},
+    {id:"cf4", name:"Queijo c/ Azeitona e Requeijão", desc:"", price:25.00},
+    {id:"cf5", name:"Chocolate ao Leite", desc:"", price:25.00},
+    {id:"cf6", name:"Chocolate Branco", desc:"", price:25.00},
+    {id:"cf7", name:"Sonho de Valsa", desc:"", price:25.00},
+    {id:"cf8", name:"Nutella com Morango", desc:"", price:25.00},
+    {id:"cf9", name:"Nutella com Banana", desc:"", price:25.00},
+    {id:"cf10", name:"Prestígio", desc:"", price:25.00},
+  ]},
+  { cat:"Crepe Suíço", items:[
+    {id:"cs1", name:"Queijo", desc:"", price:16.00},
+    {id:"cs2", name:"Pizza", desc:"", price:16.00},
+    {id:"cs3", name:"Queijo e Milho", desc:"", price:16.00},
+    {id:"cs4", name:"Queijo e Azeitona", desc:"", price:16.00},
+    {id:"cs5", name:"Chocolate ao Leite", desc:"", price:16.00},
+    {id:"cs6", name:"Chocolate Branco", desc:"", price:16.00},
+    {id:"cs7", name:"Banana e Canela", desc:"", price:16.00},
+    {id:"cs8", name:"Prestígio", desc:"", price:16.00},
+    {id:"cs9", name:"Sonho de Valsa", desc:"", price:16.00},
+    {id:"cs10", name:"Bis", desc:"", price:16.00},
+    {id:"cs11", name:"Stikadinho", desc:"", price:16.00},
+  ]},
+];
+
+let cart = {};
+let activeCat = MENU[0].cat;
+let currentView = 'menu';
+let myOrders = [];
+let selectedPaymentMethod = 'pix';
+
+function fmt(v){ return 'R$ ' + v.toFixed(2).replace('.', ','); }
+
+function renderCats(){
+  const nav = document.getElementById('catsNav');
+  nav.innerHTML = MENU.map(c =>
+    `<button class="cat-btn ${c.cat===activeCat?'active':''}" data-cat="${c.cat}">${c.cat}</button>`
+  ).join('');
+  nav.querySelectorAll('.cat-btn').forEach(btn=>{
+    btn.onclick = ()=>{ activeCat = btn.dataset.cat; renderCats(); renderMenu(); };
+  });
+}
+
+function renderMenu(){
+  const cat = MENU.find(c=>c.cat===activeCat);
+  document.getElementById('menuContent').innerHTML = `
+    <div class="section-title">${cat.cat}</div>
+    <div class="grid">${cat.items.map(item => itemCardHtml(item)).join('')}</div>
+  `;
+  cat.items.forEach(item=>{
+    const addBtn = document.getElementById('add-'+item.id);
+    if(addBtn) addBtn.onclick = ()=> changeQty(item, 1);
+    const minusBtn = document.getElementById('minus-'+item.id);
+    if(minusBtn) minusBtn.onclick = ()=> changeQty(item, -1);
+    const plusBtn = document.getElementById('plus-'+item.id);
+    if(plusBtn) plusBtn.onclick = ()=> changeQty(item, 1);
+  });
+}
+
+function itemCardHtml(item){
+  const qty = cart[item.id] ? cart[item.id].qty : 0;
+  const initial = item.name.charAt(0);
+  return `
+    <div class="item-card">
+      <div class="item-top">
+        <div class="item-badge">${initial}</div>
+        <div><div class="item-name">${item.name}</div></div>
+      </div>
+      <div class="item-desc">${item.desc}</div>
+      <div class="item-bottom">
+        <span class="item-price">${fmt(item.price)}</span>
+        ${qty===0
+          ? `<button class="add-btn" id="add-${item.id}">Adicionar</button>`
+          : `<div class="stepper"><button id="minus-${item.id}">−</button><span>${qty}</span><button id="plus-${item.id}">+</button></div>`
+        }
+      </div>
+    </div>
+  `;
+}
+
+function changeQty(item, delta){
+  if(!cart[item.id]) cart[item.id] = { item, qty:0 };
+  cart[item.id].qty += delta;
+  if(cart[item.id].qty <= 0) delete cart[item.id];
+  renderMenu(); renderCartCount(); renderCartSheet();
+}
+
+function renderCartCount(){
+  const total = Object.values(cart).reduce((s,c)=>s+c.qty,0);
+  document.getElementById('cartCount').textContent = total;
+}
+
+function cartTotalValue(){
+  return Object.values(cart).reduce((s,c)=> s + c.qty*c.item.price, 0);
+}
+
+function renderCartSheet(){
+  const list = document.getElementById('cartList');
+  const entries = Object.values(cart);
+  if(entries.length===0){
+    list.innerHTML = `<div class="cart-empty">Seu carrinho está vazio.<br>Toque em um item do cardápio para adicionar.</div>`;
+  } else {
+    list.innerHTML = entries.map(c => `
+      <div class="cart-row">
+        <div class="cart-row-info">
+          <div class="cart-row-name">${c.qty}x ${c.item.name}</div>
+          <div class="cart-row-price">${fmt(c.item.price)} cada</div>
+        </div>
+        <div class="cart-row-total">${fmt(c.qty*c.item.price)}</div>
+        <button class="remove-btn" data-id="${c.item.id}">✕</button>
+      </div>
+    `).join('');
+    list.querySelectorAll('.remove-btn').forEach(btn=>{
+      btn.onclick = ()=>{ delete cart[btn.dataset.id]; renderMenu(); renderCartCount(); renderCartSheet(); };
+    });
+  }
+  document.getElementById('cartTotal').textContent = fmt(cartTotalValue());
+  document.getElementById('sendBtn').disabled = entries.length===0;
+}
+
+document.getElementById('payPix').onclick = () => setPaymentMethod('pix');
+document.getElementById('payCard').onclick = () => setPaymentMethod('card');
+
+function setPaymentMethod(method) {
+  selectedPaymentMethod = method;
+  document.getElementById('payPix').classList.toggle('active', method === 'pix');
+  document.getElementById('payCard').classList.toggle('active', method === 'card');
+}
+
+const overlay = document.getElementById('overlay');
+const sheet = document.getElementById('cartSheet');
+function openCart(){ overlay.classList.add('show'); sheet.classList.add('show'); }
+function closeCart(){ overlay.classList.remove('show'); sheet.classList.remove('show'); }
+document.getElementById('cartBtn').onclick = openCart;
+document.getElementById('closeCart').onclick = closeCart;
+overlay.onclick = closeCart;
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCQxr8EkaR0bwdvX9KjZXbDshTo9B9jn24",
+  authDomain: "meu-su.firebaseapp.com",
+  databaseURL: "https://meu-su-default-rtdb.firebaseio.com",
+  projectId: "meu-su",
+  storageBucket: "meu-su.firebasestorage.app",
+  messagingSenderId: "123781955468",
+  appId: "1:123781955468:web:f4fd0a2824c43b48d9e0a9"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+async function nextSenha(){
+  const result = await db.ref('senha_counter').transaction(current => {
+    let n = (current || 0) + 1;
+    if(n > 99) n = 1;
+    return n;
+  });
+  const n = result.snapshot.val();
+  return String(n).padStart(2, '0');
+}
+
+document.getElementById('sendBtn').onclick = async ()=>{
+  const tableNum = document.getElementById('tableInput').value.trim() || '—';
+  const notes = document.getElementById('orderNotes').value.trim();
+  const entries = Object.values(cart);
+  if(entries.length===0) return;
+
+  const senha = await nextSenha();
+  const total = cartTotalValue();
+
+  const order = {
+    id: 'order_' + Date.now(),
+    senha: senha,
+    table: tableNum,
+    items: entries.map(c=>({ name:c.item.name, qty:c.qty, price:c.item.price })),
+    total: total,
+    notes: notes,
+    paymentMethod: selectedPaymentMethod,
+    status: 'preparo',
+    createdAt: new Date().toISOString(),
+  };
+
+  try{
+    await db.ref('orders/'+order.id).set(order);
+  }catch(e){ console.error('Falha ao salvar pedido', e); }
+
+  myOrders.push(order);
+
+  document.getElementById('senhaNumber').textContent = senha;
+  const payBox = document.getElementById('payBox');
+
+  if(selectedPaymentMethod === 'pix'){
+    const qrText = encodeURIComponent(`PIX MEU SUICO - VALOR: ${fmt(total)} - SENHA: ${senha}`);
+    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${qrText}`;
+
+    payBox.innerHTML = `
+      <div class="pay-box-title">Pagamento via Pix</div>
+      <div class="price-highlight">${fmt(total)}</div>
+      <img src="${qrUrl}" class="qr-code-img" alt="QR Code Pix">
+      <div class="pay-instructions">Abra o app do seu banco e escaneie o QR Code acima para efetuar o pagamento.</div>
+    `;
+  } else {
+    payBox.innerHTML = `
+      <div class="pay-box-title">Pagamento no Cartão</div>
+      <div class="price-highlight">${fmt(total)}</div>
+      <div class="pay-instructions" style="margin-top:10px;">
+        Dirija-se ao balcão com a <strong>Senha #${senha}</strong> e informe o valor de <strong>${fmt(total)}</strong> para pagar na Maquininha Smart.
+      </div>
+    `;
+  }
+
+  document.getElementById('confirmScreen').classList.add('show');
+
+  cart = {};
+  document.getElementById('orderNotes').value = '';
+  renderMenu(); renderCartCount(); renderCartSheet();
+  closeCart();
+};
+
+document.getElementById('newOrderBtn').onclick = ()=>{
+  document.getElementById('confirmScreen').classList.remove('show');
+};
+
+function renderMyOrders(){
+  const el = document.getElementById('mainOrders');
+  if(myOrders.length===0){
+    el.innerHTML = `<div class="orders-empty">Nenhum pedido enviado por este tablet ainda.</div>`;
+    return;
+  }
+  el.innerHTML = myOrders.slice().reverse().map(o=>{
+    const time = new Date(o.createdAt).toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+    const itemsStr = o.items.map(i=>`${i.qty}x ${i.name}`).join('<br>');
+    const payStr = o.paymentMethod === 'pix' ? 'Pix (Tela)' : 'Cartão (Balcão)';
+    return `
+      <div class="order-card">
+        <div class="order-card-top">
+          <span class="order-senha">Senha ${o.senha} · Mesa ${o.table}</span>
+          <span class="order-time">${time}</span>
+        </div>
+        <div class="order-items">${itemsStr}</div>
+        <div class="order-footer">
+          <span class="order-status status-preparo">Aguardando chamada</span>
+          <small style="color:var(--grey); font-weight:600;">${payStr}</small>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+const catsNav = document.getElementById('catsNav');
+const mainMenu = document.getElementById('mainMenu');
+const mainOrders = document.getElementById('mainOrders');
+const ordersBtn = document.getElementById('ordersBtn');
+
+ordersBtn.onclick = ()=>{
+  if(currentView==='menu'){
+    currentView='orders';
+    catsNav.style.display='none';
+    mainMenu.style.display='none';
+    mainOrders.style.display='block';
+    ordersBtn.textContent = 'Voltar ao cardápio';
+    renderMyOrders();
+  } else {
+    currentView='menu';
+    catsNav.style.display='flex';
+    mainMenu.style.display='block';
+    mainOrders.style.display='none';
+    ordersBtn.textContent = 'Meus pedidos';
+  }
+};
+
+renderCats();
+renderMenu();
+renderCartCount();
+renderCartSheet();
+</script>
+</body>
+</html>
