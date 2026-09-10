@@ -75,11 +75,17 @@
   .item-qty { font-weight: 800; color: var(--red); font-size: 16px; min-width: 24px; }
   .item-name { font-weight: 600; flex: 1; }
   .notes-box { background: var(--red-light); color: var(--red-dark); padding: 8px 10px; border-radius: 6px; font-size: 13px; font-weight: 600; }
+  
+  .pay-tag { display: inline-block; padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 800; text-transform: uppercase; }
+  .pay-tag.pending { background: var(--amber-light); color: var(--amber); }
+  .pay-tag.paid { background: var(--green-light); color: var(--green); }
+
   .card-actions { display: flex; gap: 8px; margin-top: 4px; }
   .action-btn {
     flex: 1; padding: 10px; border: none; border-radius: 8px; font-weight: 700;
     font-size: 13px; cursor: pointer; transition: opacity 0.15s;
   }
+  .btn-confirm-pay { background: var(--amber); color: #FFF; }
   .btn-pronto { background: var(--green); color: #FFF; }
   .btn-entregar { background: var(--ink); color: #FFF; }
   .btn-cancelar { background: transparent; color: var(--grey); border: 1px solid var(--line); flex: 0; padding: 10px 12px; }
@@ -175,6 +181,10 @@ function updateStatus(orderId, newStatus) {
   db.ref('orders/' + orderId).update({ status: newStatus });
 }
 
+function confirmPayment(orderId) {
+  db.ref('orders/' + orderId).update({ paid: true });
+}
+
 function renderBoard(orders) {
   const colPreparo = document.getElementById('colPreparo');
   const colPronto = document.getElementById('colPronto');
@@ -198,20 +208,31 @@ function renderBoard(orders) {
 
     const notesHtml = order.notes ? `<div class="notes-box">Obs: ${order.notes}</div>` : '';
 
+    const isPix = order.paymentMethod === 'pix';
+    const isPaid = order.paid === true;
+
+    const payBadge = isPix 
+      ? (isPaid ? `<span class="pay-tag paid">Pix Pago ✓</span>` : `<span class="pay-tag pending">Aguardando Pix</span>`)
+      : `<span class="pay-tag pending">Pagar no Cartão</span>`;
+
     if (order.status === 'preparo') {
       cPreparo++;
       card.className = 'order-card preparo';
       card.innerHTML = `
         <div class="card-head">
           <span class="senha-tag">#${order.senha}</span>
-          <span class="mesa-tag">Mesa ${order.table}</span>
+          <div>
+            <span class="mesa-tag">Mesa ${order.table}</span>
+            ${payBadge}
+          </div>
           <span class="time-tag">${time}</span>
         </div>
         <div class="items-list">${itemsHtml}</div>
         ${notesHtml}
         <div class="card-actions">
           <button class="action-btn btn-cancelar" onclick="updateStatus('${order.id}', 'cancelado')">✕</button>
-          <button class="action-btn btn-pronto" onclick="updateStatus('${order.id}', 'pronto')">Concluir Preparo</button>
+          ${!isPaid ? `<button class="action-btn btn-confirm-pay" onclick="confirmPayment('${order.id}')">Confirmar Pix</button>` : ''}
+          <button class="action-btn btn-pronto" onclick="updateStatus('${order.id}', 'pronto')">Concluir</button>
         </div>
       `;
       colPreparo.appendChild(card);
