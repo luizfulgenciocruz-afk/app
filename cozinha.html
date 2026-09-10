@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Meu-Suíço Foods — Cozinha (KDS)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<link rel="manifest" href="manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#C8202B">
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js');
+  }
+</script>
+
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
+
+<style>
+  :root {
+    --red: #C8202B; --red-dark: #8E141C; --red-light: #FBEAEA;
+    --ink: #241F1D; --grey: #7A7370; --paper: #F4F1EA;
+    --card-bg: #FFFFFF; --line: #E2DCD5; --green: #2E7D32;
+    --green-light: #E8F5E9; --amber: #ED6C02; --amber-light: #FFF4E5;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body {
+    margin: 0; padding: 0; background: var(--paper); color: var(--ink);
+    font-family: 'Inter', sans-serif; height: 100vh; display: flex;
+    flex-direction: column; overflow: hidden;
+  }
+  header.topbar {
+    background: var(--red); color: #FFF; padding: 12px 24px;
+    display: flex; align-items: center; justify-content: space-between;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1); z-index: 10;
+  }
+  .title-group { display: flex; align-items: center; gap: 12px; }
+  .title-group h1 { font-family: 'Fraunces', serif; font-size: 22px; margin: 0; }
+  .status-badge {
+    background: rgba(255,255,255,0.2); padding: 4px 10px; border-radius: 20px;
+    font-size: 12px; font-weight: 600;
+  }
+  .kanban-board {
+    flex: 1; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px;
+    padding: 16px; overflow: hidden;
+  }
+  .column {
+    background: #EAE6DF; border-radius: 12px; display: flex; flex-direction: column;
+    max-height: 100%; border: 1px solid var(--line);
+  }
+  .column-header {
+    padding: 14px 16px; font-family: 'Fraunces', serif; font-size: 18px; font-weight: 700;
+    display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--line);
+  }
+  .column-count {
+    background: var(--ink); color: #FFF; font-family: 'Inter'; font-size: 12px;
+    padding: 2px 8px; border-radius: 12px;
+  }
+  .column-body { flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 12px; }
+  .order-card {
+    background: var(--card-bg); border-radius: 10px; border: 1px solid var(--line);
+    padding: 14px; box-shadow: 0 2px 6px rgba(0,0,0,0.04); display: flex; flex-direction: column; gap: 10px;
+  }
+  .order-card.preparo { border-left: 6px solid var(--amber); }
+  .order-card.pronto { border-left: 6px solid var(--green); }
+  .card-head { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #F0F0F0; padding-bottom: 8px; }
+  .senha-tag { font-family: 'Fraunces', serif; font-size: 22px; font-weight: 700; color: var(--red-dark); }
+  .mesa-tag { font-weight: 700; font-size: 14px; background: #F0F0F0; padding: 4px 8px; border-radius: 6px; }
+  .time-tag { font-size: 12px; color: var(--grey); }
+  .items-list { display: flex; flex-direction: column; gap: 6px; }
+  .item-row { display: flex; align-items: baseline; gap: 8px; font-size: 15px; }
+  .item-qty { font-weight: 800; color: var(--red); font-size: 16px; min-width: 24px; }
+  .item-name { font-weight: 600; flex: 1; }
+  .notes-box { background: var(--red-light); color: var(--red-dark); padding: 8px 10px; border-radius: 6px; font-size: 13px; font-weight: 600; }
+  .card-actions { display: flex; gap: 8px; margin-top: 4px; }
+  .action-btn {
+    flex: 1; padding: 10px; border: none; border-radius: 8px; font-weight: 700;
+    font-size: 13px; cursor: pointer; transition: opacity 0.15s;
+  }
+  .btn-pronto { background: var(--green); color: #FFF; }
+  .btn-entregar { background: var(--ink); color: #FFF; }
+  .btn-cancelar { background: transparent; color: var(--grey); border: 1px solid var(--line); flex: 0; padding: 10px 12px; }
+  .sound-btn { background: rgba(255,255,255,0.2); border: none; color: #FFF; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 12px; }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="title-group">
+    <h1>Cozinha &amp; Produção</h1>
+    <span class="status-badge">Conectado</span>
+  </div>
+  <button class="sound-btn" id="soundToggle">🔔 Som Ativo</button>
+</header>
+
+<div class="kanban-board">
+  <div class="column">
+    <div class="column-header" style="color: var(--amber);">
+      <span>Em Preparo</span>
+      <span class="column-count" id="countPreparo">0</span>
+    </div>
+    <div class="column-body" id="colPreparo"></div>
+  </div>
+
+  <div class="column">
+    <div class="column-header" style="color: var(--green);">
+      <span>Pronto / Balcão</span>
+      <span class="column-count" id="countPronto">0</span>
+    </div>
+    <div class="column-body" id="colPronto"></div>
+  </div>
+
+  <div class="column">
+    <div class="column-header" style="color: var(--grey);">
+      <span>Entregues (Hoje)</span>
+      <span class="column-count" id="countEntregue">0</span>
+    </div>
+    <div class="column-body" id="colEntregue"></div>
+  </div>
+</div>
+
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyCQxr8EkaR0bwdvX9KjZXbDshTo9B9jn24",
+  authDomain: "meu-su.firebaseapp.com",
+  databaseURL: "https://meu-su-default-rtdb.firebaseio.com",
+  projectId: "meu-su",
+  storageBucket: "meu-su.firebasestorage.app",
+  messagingSenderId: "123781955468",
+  appId: "1:123781955468:web:f4fd0a2824c43b48d9e0a9"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+let soundEnabled = true;
+let isFirstLoad = true;
+
+const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+function playBeep() {
+  if (!soundEnabled) return;
+  try {
+    const osc = audioContext.createOscillator();
+    const gain = audioContext.createGain();
+    osc.connect(gain); gain.connect(audioContext.destination);
+    osc.type = "sine"; osc.frequency.setValueAtTime(880, audioContext.currentTime);
+    gain.gain.setValueAtTime(0.3, audioContext.currentTime);
+    osc.start(); osc.stop(audioContext.currentTime + 0.3);
+  } catch(e) { console.error(e); }
+}
+
+document.getElementById('soundToggle').onclick = () => {
+  soundEnabled = !soundEnabled;
+  document.getElementById('soundToggle').textContent = soundEnabled ? "🔔 Som Ativo" : "🔕 Mudo";
+};
+
+db.ref('orders').on('value', snapshot => {
+  const data = snapshot.val() || {};
+  const orders = Object.values(data);
+  
+  if (!isFirstLoad) {
+    const prevCount = parseInt(document.getElementById('countPreparo').textContent || "0");
+    const currentPreparo = orders.filter(o => o.status === 'preparo').length;
+    if (currentPreparo > prevCount) playBeep();
+  }
+  isFirstLoad = false;
+
+  renderBoard(orders);
+});
+
+function updateStatus(orderId, newStatus) {
+  db.ref('orders/' + orderId).update({ status: newStatus });
+}
+
+function renderBoard(orders) {
+  const colPreparo = document.getElementById('colPreparo');
+  const colPronto = document.getElementById('colPronto');
+  const colEntregue = document.getElementById('colEntregue');
+
+  colPreparo.innerHTML = ''; colPronto.innerHTML = ''; colEntregue.innerHTML = '';
+  let cPreparo = 0, cPronto = 0, cEntregue = 0;
+
+  orders.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+
+  orders.forEach(order => {
+    const card = document.createElement('div');
+    const time = new Date(order.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    
+    const itemsHtml = order.items.map(i => `
+      <div class="item-row">
+        <span class="item-qty">${i.qty}x</span>
+        <span class="item-name">${i.name}</span>
+      </div>
+    `).join('');
+
+    const notesHtml = order.notes ? `<div class="notes-box">Obs: ${order.notes}</div>` : '';
+
+    if (order.status === 'preparo') {
+      cPreparo++;
+      card.className = 'order-card preparo';
+      card.innerHTML = `
+        <div class="card-head">
+          <span class="senha-tag">#${order.senha}</span>
+          <span class="mesa-tag">Mesa ${order.table}</span>
+          <span class="time-tag">${time}</span>
+        </div>
+        <div class="items-list">${itemsHtml}</div>
+        ${notesHtml}
+        <div class="card-actions">
+          <button class="action-btn btn-cancelar" onclick="updateStatus('${order.id}', 'cancelado')">✕</button>
+          <button class="action-btn btn-pronto" onclick="updateStatus('${order.id}', 'pronto')">Concluir Preparo</button>
+        </div>
+      `;
+      colPreparo.appendChild(card);
+
+    } else if (order.status === 'pronto') {
+      cPronto++;
+      card.className = 'order-card pronto';
+      card.innerHTML = `
+        <div class="card-head">
+          <span class="senha-tag">#${order.senha}</span>
+          <span class="mesa-tag">Mesa ${order.table}</span>
+          <span class="time-tag">${time}</span>
+        </div>
+        <div class="items-list">${itemsHtml}</div>
+        ${notesHtml}
+        <div class="card-actions">
+          <button class="action-btn btn-entregar" onclick="updateStatus('${order.id}', 'entregue')">Marcar Entregue</button>
+        </div>
+      `;
+      colPronto.appendChild(card);
+
+    } else if (order.status === 'entregue') {
+      cEntregue++; card.className = 'order-card'; card.style.opacity = '0.6';
+      card.innerHTML = `
+        <div class="card-head">
+          <span class="senha-tag" style="color:var(--grey)">#${order.senha}</span>
+          <span class="mesa-tag">Mesa ${order.table}</span>
+          <span class="time-tag">${time}</span>
+        </div>
+        <div class="items-list">${itemsHtml}</div>
+      `;
+      colEntregue.prepend(card);
+    }
+  });
+
+  document.getElementById('countPreparo').textContent = cPreparo;
+  document.getElementById('countPronto').textContent = cPronto;
+  document.getElementById('countEntregue').textContent = cEntregue;
+}
+</script>
+</body>
+</html>
