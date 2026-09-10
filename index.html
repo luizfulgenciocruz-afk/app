@@ -42,7 +42,7 @@
     box-shadow:0 2px 0 rgba(0,0,0,0.08); z-index:20;
   }
   .brand{display:flex; align-items:center; gap:10px;}
-  .brand-logo{width:42px; height:42px; border-radius:9px; object-fit:cover; flex-shrink:0;}
+  .brand-logo{width:42px; height:42px; border-radius:99px; object-fit:cover; flex-shrink:0;}
   .brand .name{font-size:22px; font-weight:600; font-style:italic; letter-spacing:0.2px;}
   .brand .tag{font-size:11px; opacity:0.8; font-family:'Inter';}
   .table-field{
@@ -171,19 +171,18 @@
     width: min(340px, 100%); margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
   }
   .pay-box-title { font-weight: 700; font-size: 15px; margin-bottom: 8px; color: var(--red-dark); }
-  .qr-code-img { width: 180px; height: 180px; margin: 8px 0; border-radius: 8px; border: 1px solid #EEE; }
+  .qr-code-img { width: 200px; height: 200px; margin: 8px 0; border-radius: 8px; border: 1px solid #EEE; }
   .pay-instructions { font-size: 13px; color: var(--grey); line-height: 1.4; margin: 6px 0; }
   .price-highlight { font-family: 'Fraunces'; font-weight: 700; font-size: 22px; color: var(--red-dark); margin: 6px 0; }
   .copy-btn {
     background: var(--red-light); color: var(--red-dark); border: 1px solid var(--line);
-    padding: 8px 14px; border-radius: 8px; font-weight: 700; font-size: 12px; cursor: pointer; margin-top: 6px;
+    padding: 10px 16px; border-radius: 8px; font-weight: 700; font-size: 13px; cursor: pointer; margin-top: 8px; width: 100%;
   }
   
   .payment-success-badge {
     background: var(--green-light); color: var(--green); border: 2px solid var(--green);
     padding: 12px 16px; border-radius: 12px; font-weight: 800; font-size: 15px;
     display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 10px;
-    animation: popIn 0.3s ease;
   }
 
   .confirm-screen button.primary-btn{
@@ -201,18 +200,13 @@
   .status-preparo{background:var(--red-light); color:var(--red-dark);}
   .order-footer{display:flex; justify-content:space-between; align-items:center; margin-top:10px;}
   .orders-empty{text-align:center; color:var(--grey); padding:60px 20px; font-size:14px;}
-
-  @keyframes popIn {
-    0% { transform: scale(0.8); opacity: 0; }
-    100% { transform: scale(1); opacity: 1; }
-  }
 </style>
 </head>
 <body>
 
 <header class="topbar">
   <div class="brand">
-    <img src="data:image/jpeg;base64,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" alt="Meu-Suíço Foods" class="brand-logo">
+    <div style="width:40px; height:40px; background:#FFF; color:var(--red); border-radius:8px; display:flex; align-items:center; justify-content:center; font-family:'Fraunces'; font-weight:800; font-size:18px;">MS</div>
     <div>
       <div class="name">Meu-Suíço Foods</div>
       <span class="tag">cardápio digital</span>
@@ -281,10 +275,10 @@
 </div>
 
 <script>
-// CNPJ do estabelecimento
+// DADOS DO PIX
 const PIX_KEY_CNPJ = "58442824000100";
-const MERCHANT_NAME = "LUIZ GUSTAVO FULGENCIO DA CRUZ";
-const MERCHANT_CITY = "SAO JOSE DOS PINHAIS";
+const MERCHANT_NAME = "LUIZ GUSTAVO F";
+const MERCHANT_CITY = "SAO JOSE DOS P";
 
 const MENU = [
   { cat:"Bebidas", items:[
@@ -329,22 +323,21 @@ let activeCat = MENU[0].cat;
 let currentView = 'menu';
 let myOrders = [];
 let selectedPaymentMethod = 'pix';
-let currentActiveOrderId = null;
 let orderStatusListener = null;
 
 function fmt(v){ return 'R$ ' + v.toFixed(2).replace('.', ','); }
 
-// GERADOR DE PAYLOAD BR CODE (PIX EMV COM CRC16)
-function generatePixPayload(key, name, city, amount, txid = "***") {
-  function formatField(id, value) {
-    const len = value.length.toString().padStart(2, '0');
-    return `${id}${len}${value}`;
+// GERADOR DE PAYLOAD PIX CONFORME PADRÃO BANCO CENTRAL (EMV)
+function getPixCode(key, name, city, value, txid = "***") {
+  function emv(id, val) {
+    const len = val.length.toString().padStart(2, '0');
+    return `${id}${len}${val}`;
   }
 
-  function crc16(data) {
+  function getCrc16(payload) {
     let crc = 0xFFFF;
-    for (let i = 0; i < data.length; i++) {
-      crc ^= data.charCodeAt(i) << 8;
+    for (let i = 0; i < payload.length; i++) {
+      crc ^= payload.charCodeAt(i) << 8;
       for (let j = 0; j < 8; j++) {
         if ((crc & 0x8000) !== 0) {
           crc = (crc << 1) ^ 0x1021;
@@ -357,27 +350,27 @@ function generatePixPayload(key, name, city, amount, txid = "***") {
     return crc.toString(16).toUpperCase().padStart(4, '0');
   }
 
-  const cleanKey = key.replace(/[^a-zA-Z0-9]/g, '');
-  const cleanName = name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").substring(0, 25).toUpperCase();
-  const cleanCity = city.normalize("NFD").replace(/[\u0300-\u036f]/g, "").substring(0, 15).toUpperCase();
-  const formattedAmount = amount.toFixed(2);
+  const cleanKey = key.replace(/[^0-9]/g, '');
+  const cleanName = name.substring(0, 25).toUpperCase();
+  const cleanCity = city.substring(0, 15).toUpperCase();
+  const formattedVal = value.toFixed(2);
 
-  const merchantAccount = formatField('00', 'br.gov.bcb.pix') + formatField('01', cleanKey);
-  
-  let payload = 
-    formatField('00', '01') +
-    formatField('26', merchantAccount) +
-    formatField('52', '0000') +
-    formatField('53', '986') +
-    formatField('54', formattedAmount) +
-    formatField('58', 'BR') +
-    formatField('59', cleanName) +
-    formatField('60', cleanCity) +
-    formatField('62', formatField('05', txid)) +
+  const accountInfo = emv('00', 'br.gov.bcb.pix') + emv('01', cleanKey);
+  const addData = emv('05', txid);
+
+  let raw = 
+    emv('00', '01') +
+    emv('26', accountInfo) +
+    emv('52', '0000') +
+    emv('53', '986') +
+    emv('54', formattedVal) +
+    emv('58', 'BR') +
+    emv('59', cleanName) +
+    emv('60', cleanCity) +
+    emv('62', addData) +
     '6304';
 
-  payload += crc16(payload);
-  return payload;
+  return raw + getCrc16(raw);
 }
 
 function renderCats(){
@@ -515,7 +508,6 @@ document.getElementById('sendBtn').onclick = async ()=>{
   const senha = await nextSenha();
   const total = cartTotalValue();
   const orderId = 'order_' + Date.now();
-  currentActiveOrderId = orderId;
 
   const order = {
     id: orderId,
@@ -540,9 +532,8 @@ document.getElementById('sendBtn').onclick = async ()=>{
   const payBox = document.getElementById('payBox');
 
   if(selectedPaymentMethod === 'pix'){
-    // Gera o código EMV válido para o app do banco ler o valor exato
-    const pixPayload = generatePixPayload(PIX_KEY_CNPJ, MERCHANT_NAME, MERCHANT_CITY, total, senha);
-    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(pixPayload)}`;
+    const pixPayload = getPixCode(PIX_KEY_CNPJ, MERCHANT_NAME, MERCHANT_CITY, total, senha);
+    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(pixPayload)}`;
 
     payBox.innerHTML = `
       <div class="pay-box-title">Pagamento via Pix</div>
@@ -550,9 +541,9 @@ document.getElementById('sendBtn').onclick = async ()=>{
       <img src="${qrUrl}" class="qr-code-img" alt="QR Code Pix">
       <div class="pay-instructions">
         CNPJ: <strong>58.442.824/0001-00</strong><br>
-        Abra o app do seu banco e escaneie o código acima.
+        Abra o app do seu banco e leia o QR Code acima.
       </div>
-      <button class="copy-btn" id="copyPixBtn">Copiar Código Pix</button>
+      <button class="copy-btn" id="copyPixBtn">Copiar Código Pix Copia e Cola</button>
       <div id="paymentStatusContainer" style="margin-top:10px;">
         <small style="color:var(--grey);">Aguardando confirmação do pagamento...</small>
       </div>
@@ -560,11 +551,10 @@ document.getElementById('sendBtn').onclick = async ()=>{
 
     document.getElementById('copyPixBtn').onclick = () => {
       navigator.clipboard.writeText(pixPayload);
-      document.getElementById('copyPixBtn').textContent = "Copiado!";
-      setTimeout(() => { document.getElementById('copyPixBtn').textContent = "Copiar Código Pix"; }, 2000);
+      document.getElementById('copyPixBtn').textContent = "Cód. Copiado!";
+      setTimeout(() => { document.getElementById('copyPixBtn').textContent = "Copiar Código Pix Copia e Cola"; }, 2000);
     };
 
-    // Monitora atualização de pagamento no Firebase
     listenPaymentConfirmation(orderId);
 
   } else {
