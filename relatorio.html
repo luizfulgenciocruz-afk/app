@@ -51,12 +51,54 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 24px;
+    margin-bottom: 20px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    flex-wrap: wrap;
+    gap: 12px;
   }
   .brand { display: flex; align-items: center; gap: 14px; }
   .brand img { width: 50px; height: 50px; border-radius: 50%; border: 2px solid #FFF; object-fit: cover; }
   header h1 { font-family: 'Fraunces', serif; font-size: 24px; }
+
+  /* BARRA DE FILTRO DE DATA E AÇÕES */
+  .filter-bar {
+    background: #FFF;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 16px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  .filter-group { display: flex; align-items: center; gap: 12px; }
+  .filter-group label { font-weight: 700; font-size: 14px; color: var(--grey); }
+  .date-select {
+    padding: 10px 16px;
+    border-radius: 10px;
+    border: 1.5px solid var(--line);
+    font-family: 'Inter', sans-serif;
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--ink);
+    background: var(--paper);
+    cursor: pointer;
+  }
+
+  .reset-btn {
+    background: #DC3545;
+    color: #FFF;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+    transition: opacity 0.2s ease;
+  }
+  .reset-btn:hover { opacity: 0.9; }
 
   /* CARDS DE RESUMO */
   .kpi-grid {
@@ -139,12 +181,21 @@
     <img src="logo.jpg" alt="Logo">
     <h1>Meu-Suíço Foods — Relatório de Vendas</h1>
   </div>
-  <div id="todayDate" style="font-weight: 700;">--/--/----</div>
 </header>
+
+<div class="filter-bar">
+  <div class="filter-group">
+    <label for="dateFilter">📅 Filtrar por Dia:</label>
+    <select id="dateFilter" class="date-select">
+      <option value="all">Todas as Datas</option>
+    </select>
+  </div>
+  <button class="reset-btn" id="clearDataBtn">🗑️ Zerar Relatório e Pedidos</button>
+</div>
 
 <div class="kpi-grid">
   <div class="kpi-card">
-    <div class="kpi-label">Faturamento Total</div>
+    <div class="kpi-label">Faturamento do Dia</div>
     <div class="kpi-value green" id="totalRevenue">R$ 0,00</div>
     <div class="kpi-sub" id="totalOrdersCount">0 pedidos realizados</div>
   </div>
@@ -168,8 +219,8 @@
 <div class="sections-grid">
   <div class="panel-box">
     <div class="panel-title">
-      <span>🧾 Pedidos por Senha</span>
-      <span style="font-size: 13px; color: var(--grey); font-family: 'Inter', sans-serif;" id="lastOrdersLabel">Últimos lançamentos</span>
+      <span>🧾 Pedidos da Data</span>
+      <span style="font-size: 13px; color: var(--grey); font-family: 'Inter', sans-serif;" id="selectedDateLabel">--/--/----</span>
     </div>
     <table>
       <thead>
@@ -187,7 +238,7 @@
   </div>
 
   <div class="panel-box">
-    <div class="panel-title">🏆 Produtos Mais Vendidos</div>
+    <div class="panel-title">🏆 Mais Vendidos no Dia</div>
     <table>
       <thead>
         <tr>
@@ -216,22 +267,66 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-document.getElementById('todayDate').textContent = new Date().toLocaleDateString('pt-BR');
+let allOrdersRaw = {};
+let selectedDate = new Date().toLocaleDateString('pt-BR');
 
 function fmt(v){ return 'R$ ' + (v || 0).toFixed(2).replace('.', ','); }
 
+// CARREGA DADOS DO FIREBASE EM TEMPO REAL
 db.ref('orders').on('value', snapshot => {
-  const orders = snapshot.val();
-  if(!orders) return;
+  allOrdersRaw = snapshot.val() || {};
+  populateDateDropdown();
+  renderDashboard();
+});
 
-  const orderList = Object.values(orders);
+// PREENCHE O SELECT COM AS DATAS EXISTENTES
+function populateDateDropdown() {
+  const select = document.getElementById('dateFilter');
+  const datesSet = new Set();
+  
+  const todayStr = new Date().toLocaleDateString('pt-BR');
+  datesSet.add(todayStr);
+
+  Object.values(allOrdersRaw).forEach(o => {
+    if (o.createdAt) {
+      const d = new Date(o.createdAt).toLocaleDateString('pt-BR');
+      datesSet.add(d);
+    }
+  });
+
+  const sortedDates = Array.from(datesSet).reverse();
+  const currentVal = select.value !== 'all' ? selectedDate : 'all';
+
+  select.innerHTML = '<option value="all">Todas as Datas</option>' + 
+    sortedDates.map(d => `<option value="${d}" ${d === selectedDate ? 'selected' : ''}>${d === todayStr ? 'Hoje (' + d + ')' : d}</option>`).join('');
+
+  if (currentVal === 'all') select.value = 'all';
+}
+
+document.getElementById('dateFilter').addEventListener('change', (e) => {
+  selectedDate = e.target.value;
+  renderDashboard();
+});
+
+// ATUALIZA OS GRÁFICOS E TABELAS COM BASE NA DATA SELECIONADA
+function renderDashboard() {
+  const orderList = Object.values(allOrdersRaw);
+  
+  // FILTRAGEM POR DIA
+  const filteredOrders = orderList.filter(o => {
+    if (selectedDate === 'all') return true;
+    if (!o.createdAt) return false;
+    return new Date(o.createdAt).toLocaleDateString('pt-BR') === selectedDate;
+  });
+
+  document.getElementById('selectedDateLabel').textContent = selectedDate === 'all' ? 'Todas as Datas' : selectedDate;
 
   let totalRev = 0;
   let pixRev = 0; let pixCnt = 0;
   let cardRev = 0; let cardCnt = 0;
   const itemSales = {};
 
-  orderList.forEach(o => {
+  filteredOrders.forEach(o => {
     totalRev += o.total || 0;
     
     if(o.paymentMethod === 'pix'){
@@ -253,43 +348,50 @@ db.ref('orders').on('value', snapshot => {
     }
   });
 
+  // ATUALIZA CARDS
   document.getElementById('totalRevenue').textContent = fmt(totalRev);
-  document.getElementById('totalOrdersCount').textContent = `${orderList.length} pedidos realizados`;
+  document.getElementById('totalOrdersCount').textContent = `${filteredOrders.length} pedidos realizados`;
   document.getElementById('pixRevenue').textContent = fmt(pixRev);
   document.getElementById('pixCount').textContent = `${pixCnt} pedidos`;
   document.getElementById('cardRevenue').textContent = fmt(cardRev);
   document.getElementById('cardCount').textContent = `${cardCnt} pedidos`;
-  document.getElementById('avgTicket').textContent = fmt(orderList.length ? totalRev / orderList.length : 0);
+  document.getElementById('avgTicket').textContent = fmt(filteredOrders.length ? totalRev / filteredOrders.length : 0);
 
+  // HISTÓRICO DE PEDIDOS COM SENHA
   const recentListEl = document.getElementById('recentTransactionsList');
-  recentListEl.innerHTML = orderList.reverse().map(o => {
-    const time = o.createdAt ? new Date(o.createdAt).toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'}) : '--:--';
-    const itemsText = o.items ? o.items.map(i => `${i.qty}x ${i.name}`).join(', ') : 'Sem itens';
-    
-    return `
-      <tr>
-        <td>
-          <span class="senha-badge">#${o.senha || '00'}</span>
-          <div class="order-time">${time}</div>
-        </td>
-        <td>
-          <div style="font-weight:700;">${itemsText}</div>
-          ${o.notes ? `<div class="items-summary">Obs: ${o.notes}</div>` : ''}
-        </td>
-        <td>
-          <span class="badge ${o.paymentMethod === 'pix' ? 'badge-pix' : 'badge-card'}">
-            ${o.paymentMethod === 'pix' ? 'Pix' : 'Cartão'}
-          </span>
-        </td>
-        <td style="text-align: right; font-weight:800; color:var(--red-dark);">${fmt(o.total)}</td>
-      </tr>
-    `;
-  }).join('');
+  if (filteredOrders.length === 0) {
+    recentListEl.innerHTML = `<tr><td colspan="4" style="text-align:center; color:var(--grey); padding: 40px;">Nenhum pedido nesta data.</td></tr>`;
+  } else {
+    recentListEl.innerHTML = filteredOrders.reverse().map(o => {
+      const time = o.createdAt ? new Date(o.createdAt).toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'}) : '--:--';
+      const itemsText = o.items ? o.items.map(i => `${i.qty}x ${i.name}`).join(', ') : 'Sem itens';
+      
+      return `
+        <tr>
+          <td>
+            <span class="senha-badge">#${o.senha || '00'}</span>
+            <div class="order-time">${time}</div>
+          </td>
+          <td>
+            <div style="font-weight:700;">${itemsText}</div>
+            ${o.notes ? `<div class="items-summary">Obs: ${o.notes}</div>` : ''}
+          </td>
+          <td>
+            <span class="badge ${o.paymentMethod === 'pix' ? 'badge-pix' : 'badge-card'}">
+              ${o.paymentMethod === 'pix' ? 'Pix' : 'Cartão'}
+            </span>
+          </td>
+          <td style="text-align: right; font-weight:800; color:var(--red-dark);">${fmt(o.total)}</td>
+        </tr>
+      `;
+    }).join('');
+  }
 
+  // RANKING DE PRODUTOS
   const sortedItems = Object.entries(itemSales).sort((a,b) => b[1].qty - a[1].qty);
   const topListEl = document.getElementById('topItemsList');
   if(sortedItems.length === 0){
-    topListEl.innerHTML = `<tr><td colspan="3" style="text-align:center; color:var(--grey); padding: 40px;">Nenhum dado registrado.</td></tr>`;
+    topListEl.innerHTML = `<tr><td colspan="3" style="text-align:center; color:var(--grey); padding: 40px;">Nenhum item vendido nesta data.</td></tr>`;
   } else {
     topListEl.innerHTML = sortedItems.map(([name, stat]) => `
       <tr>
@@ -299,7 +401,23 @@ db.ref('orders').on('value', snapshot => {
       </tr>
     `).join('');
   }
-});
+}
+
+// BOTAO PARA RESETAR TODOS OS PEDIDOS
+document.getElementById('clearDataBtn').onclick = () => {
+  const confirmPass = prompt("ATENÇÃO: Esta ação apagarar todos os pedidos e relatórios acumulados.\nDigite a senha para confirmar:");
+  if (confirmPass === "9963") {
+    if (confirm("Tem certeza absoluta que deseja limpar todo o histórico de vendas?")) {
+      db.ref('orders').remove();
+      db.ref('last_called').remove();
+      db.ref('called_history').remove();
+      db.ref('senha_counter').set(0);
+      alert("Relatório e banco de dados zerados com sucesso!");
+    }
+  } else if (confirmPass !== null) {
+    alert("Senha incorreta! Operação cancelada.");
+  }
+};
 </script>
 </body>
 </html>
