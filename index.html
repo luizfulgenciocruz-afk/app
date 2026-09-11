@@ -97,7 +97,7 @@
   .item-bottom{display:flex; align-items:center; justify-content:space-between; margin-top:auto; padding-top:6px;}
   .item-price{font-family:'Fraunces'; font-weight:700; font-size:17px; color:var(--red-dark);}
   .add-btn{
-    background:var(--red); color:var(--white); border:none; border-radius:9px;
+    background:var(--red); color:var(--white); border:none; border-radius:99px;
     padding:9px 16px; font-weight:700; font-size:13px; cursor:pointer;
   }
   .stepper{display:flex; align-items:center; gap:10px; background:var(--red); border-radius:9px; padding:4px 6px;}
@@ -186,8 +186,9 @@
 
   .payment-success-badge {
     background: var(--green-light); color: var(--green); border: 2px solid var(--green);
-    padding: 12px 16px; border-radius: 12px; font-weight: 800; font-size: 15px;
-    display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 10px;
+    padding: 14px 16px; border-radius: 12px; font-weight: 800; font-size: 16px;
+    display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 12px;
+    animation: popIn 0.3s ease;
   }
 
   .confirm-screen button.primary-btn{
@@ -206,7 +207,6 @@
   .order-footer{display:flex; justify-content:space-between; align-items:center; margin-top:10px;}
   .orders-empty{text-align:center; color:var(--grey); padding:60px 20px; font-size:14px;}
 
-  /* ESTILO DE IMPRESSÃO TÉRMICA (58MM) */
   @media print {
     body * { visibility: hidden; }
     #printableReceipt, #printableReceipt * { visibility: visible; }
@@ -215,6 +215,11 @@
       font-family: monospace; font-size: 12px; color: #000; padding: 4mm;
     }
     .no-print { display: none !important; }
+  }
+
+  @keyframes popIn {
+    0% { transform: scale(0.8); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
   }
 </style>
 </head>
@@ -291,13 +296,11 @@
   <button class="primary-btn" id="newOrderBtn">Fazer novo pedido</button>
 </div>
 
-<!-- CONTAINER OCULTO FORMATADO PARA A IMPRESSORA TÉRMICA DE 58MM -->
 <div id="printableReceipt" style="display:none;"></div>
 
 <script>
-const PIX_KEY_CNPJ = "58442824000100";
-const MERCHANT_NAME = "LUIZ GUSTAVO F";
-const MERCHANT_CITY = "SAO JOSE DOS P";
+// TOKEN MERCADO PAGO INTEGRADO
+const MP_ACCESS_TOKEN = "APP_USR-68dcb822-3d69-4c32-9789-c13adfc3941d";
 
 const MENU = [
   { cat:"Bebidas", items:[
@@ -343,54 +346,9 @@ let currentView = 'menu';
 let myOrders = [];
 let selectedPaymentMethod = 'pix';
 let lastCreatedOrder = null;
-let orderStatusListener = null;
+let mpCheckInterval = null;
 
 function fmt(v){ return 'R$ ' + v.toFixed(2).replace('.', ','); }
-
-function getPixCode(key, name, city, value, txid = "***") {
-  function emv(id, val) {
-    const len = val.length.toString().padStart(2, '0');
-    return `${id}${len}${val}`;
-  }
-
-  function getCrc16(payload) {
-    let crc = 0xFFFF;
-    for (let i = 0; i < payload.length; i++) {
-      crc ^= payload.charCodeAt(i) << 8;
-      for (let j = 0; j < 8; j++) {
-        if ((crc & 0x8000) !== 0) {
-          crc = (crc << 1) ^ 0x1021;
-        } else {
-          crc = crc << 1;
-        }
-        crc &= 0xFFFF;
-      }
-    }
-    return crc.toString(16).toUpperCase().padStart(4, '0');
-  }
-
-  const cleanKey = key.replace(/[^0-9]/g, '');
-  const cleanName = name.substring(0, 25).toUpperCase();
-  const cleanCity = city.substring(0, 15).toUpperCase();
-  const formattedVal = value.toFixed(2);
-
-  const accountInfo = emv('00', 'br.gov.bcb.pix') + emv('01', cleanKey);
-  const addData = emv('05', txid);
-
-  let raw = 
-    emv('00', '01') +
-    emv('26', accountInfo) +
-    emv('52', '0000') +
-    emv('53', '986') +
-    emv('54', formattedVal) +
-    emv('58', 'BR') +
-    emv('59', cleanName) +
-    emv('60', cleanCity) +
-    emv('62', addData) +
-    '6304';
-
-  return raw + getCrc16(raw);
-}
 
 function renderCats(){
   const nav = document.getElementById('catsNav');
@@ -518,6 +476,36 @@ async function nextSenha(){
   return String(n).padStart(2, '0');
 }
 
+// CRIAÇÃO DA COBRANÇA PIX VIA API DO MERCADO PAGO
+async function createMercadoPagoPix(order) {
+  const bodyData = {
+    transaction_amount: Number(order.total.toFixed(2)),
+    description: `Pedido #${order.senha} - Meu-Suico Foods`,
+    payment_method_id: "pix",
+    payer: {
+      email: "cliente@meusuico.com.br",
+      first_name: "Cliente",
+      last_name: "Meu-Suico"
+    }
+  };
+
+  try {
+    const res = await fetch("https://api.mercadopago.com/v1/payments", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${MP_ACCESS_TOKEN}`
+      },
+      body: JSON.stringify(bodyData)
+    });
+    const data = await res.json();
+    return data;
+  } catch (err) {
+    console.error("Erro ao gerar Pix no Mercado Pago:", err);
+    return null;
+  }
+}
+
 document.getElementById('sendBtn').onclick = async ()=>{
   const tableNum = document.getElementById('tableInput').value.trim() || '—';
   const notes = document.getElementById('orderNotes').value.trim();
@@ -553,30 +541,46 @@ document.getElementById('sendBtn').onclick = async ()=>{
   const payBox = document.getElementById('payBox');
 
   if(selectedPaymentMethod === 'pix'){
-    const pixPayload = getPixCode(PIX_KEY_CNPJ, MERCHANT_NAME, MERCHANT_CITY, total, senha);
-    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(pixPayload)}`;
-
     payBox.innerHTML = `
-      <div class="pay-box-title">Pagamento via Pix</div>
-      <div class="price-highlight">${fmt(total)}</div>
-      <img src="${qrUrl}" class="qr-code-img" alt="QR Code Pix">
-      <div class="pay-instructions">
-        CNPJ: <strong>58.442.824/0001-00</strong><br>
-        Abra o app do seu banco e leia o QR Code acima.
-      </div>
-      <button class="copy-btn" id="copyPixBtn">Copiar Código Pix Copia e Cola</button>
-      <div id="paymentStatusContainer" style="margin-top:10px;">
-        <small style="color:var(--grey);">Aguardando confirmação do pagamento...</small>
-      </div>
+      <div class="pay-box-title">Gerando Pix...</div>
+      <div class="pay-instructions">Aguarde um instante enquanto conectamos ao Mercado Pago...</div>
     `;
+    
+    document.getElementById('confirmScreen').classList.add('show');
 
-    document.getElementById('copyPixBtn').onclick = () => {
-      navigator.clipboard.writeText(pixPayload);
-      document.getElementById('copyPixBtn').textContent = "Cód. Copiado!";
-      setTimeout(() => { document.getElementById('copyPixBtn').textContent = "Copiar Código Pix Copia e Cola"; }, 2000);
-    };
+    const mpPayment = await createMercadoPagoPix(order);
 
-    listenPaymentConfirmation(orderId);
+    if(mpPayment && mpPayment.point_of_interaction) {
+      const qrBase64 = mpPayment.point_of_interaction.transaction_data.qr_code_base64;
+      const copyCode = mpPayment.point_of_interaction.transaction_data.qr_code;
+      const paymentId = mpPayment.id;
+
+      payBox.innerHTML = `
+        <div class="pay-box-title">Pagamento via Pix</div>
+        <div class="price-highlight">${fmt(total)}</div>
+        <img src="data:image/png;base64,${qrBase64}" class="qr-code-img" alt="QR Code Pix Mercado Pago">
+        <div class="pay-instructions">Escaneie o QR Code acima no app do seu banco.</div>
+        <button class="copy-btn" id="copyPixBtn">Copiar Código Pix</button>
+        <div id="paymentStatusContainer" style="margin-top:10px;">
+          <small style="color:var(--grey);">Aguardando confirmação do banco...</small>
+        </div>
+      `;
+
+      document.getElementById('copyPixBtn').onclick = () => {
+        navigator.clipboard.writeText(copyCode);
+        document.getElementById('copyPixBtn').textContent = "Código Copiado!";
+        setTimeout(() => { document.getElementById('copyPixBtn').textContent = "Copiar Código Pix"; }, 2000);
+      };
+
+      // MONITORA O STATUS DA TRANSAÇÃO EM TEMPO REAL A CADA 2 SEGUNDOS
+      startMpPolling(paymentId, order.id);
+
+    } else {
+      payBox.innerHTML = `
+        <div class="pay-box-title" style="color:var(--red);">Erro ao gerar QR Code</div>
+        <div class="pay-instructions">Ocorreu uma falha na conexão. Por favor, solicite ajuda no balcão.</div>
+      `;
+    }
 
   } else {
     payBox.innerHTML = `
@@ -586,9 +590,8 @@ document.getElementById('sendBtn').onclick = async ()=>{
         Dirija-se ao balcão com a <strong>Senha #${senha}</strong> e informe o valor de <strong>${fmt(total)}</strong> para pagar na Maquininha Smart.
       </div>
     `;
+    document.getElementById('confirmScreen').classList.add('show');
   }
-
-  document.getElementById('confirmScreen').classList.add('show');
 
   cart = {};
   document.getElementById('orderNotes').value = '';
@@ -596,7 +599,39 @@ document.getElementById('sendBtn').onclick = async ()=>{
   closeCart();
 };
 
-// COMANDO DE IMPRESSÃO DO COMPROVANTE
+// CONSULTA O STATUS DA COBRANÇA AUTOMATICAMENTE NO MERCADO PAGO
+function startMpPolling(paymentId, orderId) {
+  if (mpCheckInterval) clearInterval(mpCheckInterval);
+
+  mpCheckInterval = setInterval(async () => {
+    try {
+      const res = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
+        headers: { "Authorization": `Bearer ${MP_ACCESS_TOKEN}` }
+      });
+      const data = await res.json();
+
+      if (data.status === "approved") {
+        clearInterval(mpCheckInterval);
+        
+        // Atualiza no Firebase para a cozinha saber que foi pago
+        db.ref(`orders/${orderId}`).update({ paid: true });
+
+        // Atualiza a tela do Tablet
+        const statusContainer = document.getElementById('paymentStatusContainer');
+        if (statusContainer) {
+          statusContainer.innerHTML = `
+            <div class="payment-success-badge">
+              <span>✓</span> Pagamento Aprovado!
+            </div>
+          `;
+        }
+      }
+    } catch (e) {
+      console.error("Erro na consulta do Pix:", e);
+    }
+  }, 2500);
+}
+
 document.getElementById('printReceiptBtn').onclick = () => {
   if (!lastCreatedOrder) return;
 
@@ -626,27 +661,8 @@ document.getElementById('printReceiptBtn').onclick = () => {
   setTimeout(() => { receiptEl.style.display = 'none'; }, 1000);
 };
 
-function listenPaymentConfirmation(orderId) {
-  if (orderStatusListener) orderStatusListener.off();
-
-  orderStatusListener = db.ref(`orders/${orderId}`);
-  orderStatusListener.on('value', snapshot => {
-    const orderData = snapshot.val();
-    if (orderData && (orderData.paid === true || orderData.status === 'pronto' || orderData.status === 'entregue')) {
-      const statusContainer = document.getElementById('paymentStatusContainer');
-      if (statusContainer) {
-        statusContainer.innerHTML = `
-          <div class="payment-success-badge">
-            <span>✓</span> Pagamento Confirmado!
-          </div>
-        `;
-      }
-    }
-  });
-}
-
 document.getElementById('newOrderBtn').onclick = ()=>{
-  if (orderStatusListener) orderStatusListener.off();
+  if (mpCheckInterval) clearInterval(mpCheckInterval);
   document.getElementById('confirmScreen').classList.remove('show');
 };
 
