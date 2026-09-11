@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Meu-Suíço Foods — Relatório de Vendas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@700;800&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
+
+<style>
+  :root {
+    --red: #C8202B;
+    --red-dark: #8E141C;
+    --paper: #F8F9FA;
+    --ink: #241F1D;
+    --grey: #7A7370;
+    --line: #E2D8D5;
+    --green: #2E7D32;
+    --green-light: #E8F5E9;
+    --amber: #ED6C02;
+    --amber-light: #FFF4E5;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background-color: var(--paper);
+    color: var(--ink);
+    font-family: 'Inter', sans-serif;
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  header {
+    background-color: var(--red);
+    color: #FFF;
+    padding: 16px 24px;
+    border-radius: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  }
+  .brand { display: flex; align-items: center; gap: 14px; }
+  .brand img { width: 50px; height: 50px; border-radius: 50%; border: 2px solid #FFF; object-fit: cover; }
+  header h1 { font-family: 'Fraunces', serif; font-size: 24px; }
+
+  /* CARDS DE RESUMO */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .kpi-card {
+    background: #FFF;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  }
+  .kpi-label { font-size: 13px; font-weight: 700; color: var(--grey); text-transform: uppercase; margin-bottom: 6px; }
+  .kpi-value { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 800; color: var(--ink); }
+  .kpi-value.green { color: var(--green); }
+  .kpi-sub { font-size: 12px; color: var(--grey); margin-top: 4px; font-weight: 600; }
+
+  /* LAYOUT DE TABELAS */
+  .sections-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 20px;
+  }
+  @media (max-width: 800px) {
+    .sections-grid { grid-template-columns: 1fr; }
+  }
+
+  .panel-box {
+    background: #FFF;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  }
+  .panel-title {
+    font-family: 'Fraunces', serif;
+    font-size: 20px;
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--line);
+  }
+
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th { text-align: left; padding: 10px; color: var(--grey); font-weight: 700; border-bottom: 1px solid var(--line); }
+  td { padding: 10px; border-bottom: 1px solid #F0F0F0; font-weight: 600; }
+  tr:last-child td { border-bottom: none; }
+  
+  .badge {
+    padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 700; display: inline-block;
+  }
+  .badge-pix { background: #E3F2FD; color: #0D47A1; }
+  .badge-card { background: #EDE7F6; color: #4A148C; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <img src="logo.jpg" alt="Logo">
+    <h1>Meu-Suíço Foods — Relatório de Vendas</h1>
+  </div>
+  <div id="todayDate" style="font-weight: 700;">--/--/----</div>
+</header>
+
+<!-- CARDS DE RESUMO -->
+<div class="kpi-grid">
+  <div class="kpi-card">
+    <div class="kpi-label">Faturamento Total</div>
+    <div class="kpi-value green" id="totalRevenue">R$ 0,00</div>
+    <div class="kpi-sub" id="totalOrdersCount">0 pedidos realizados</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-label">Vendas no Pix</div>
+    <div class="kpi-value" id="pixRevenue">R$ 0,00</div>
+    <div class="kpi-sub" id="pixCount">0 pedidos</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-label">Vendas no Cartão</div>
+    <div class="kpi-value" id="cardRevenue">R$ 0,00</div>
+    <div class="kpi-sub" id="cardCount">0 pedidos</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-label">Ticket Médio</div>
+    <div class="kpi-value" id="avgTicket">R$ 0,00</div>
+    <div class="kpi-sub">Média por pedido</div>
+  </div>
+</div>
+
+<div class="sections-grid">
+  <!-- MAIS VENDIDOS -->
+  <div class="panel-box">
+    <div class="panel-title">🏆 Produtos Mais Vendidos</div>
+    <table>
+      <thead>
+        <tr>
+          <th>Item</th>
+          <th style="text-align: center;">Qtd Vendida</th>
+          <th style="text-align: right;">Total Arrecadado</th>
+        </tr>
+      </thead>
+      <tbody id="topItemsList">
+        <tr><td colspan="3" style="text-align:center; color:var(--grey);">Nenhum dado registrado ainda.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ULTIMAS TRANSAÇÕES -->
+  <div class="panel-box">
+    <div class="panel-title">💳 Histórico de Pedidos</div>
+    <table>
+      <thead>
+        <tr>
+          <th>Senha</th>
+          <th>Pagamento</th>
+          <th style="text-align: right;">Valor</th>
+        </tr>
+      </thead>
+      <tbody id="recentTransactionsList">
+        <tr><td colspan="3" style="text-align:center; color:var(--grey);">Nenhum pedido.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyCQxr8EkaR0bwdvX9KjZXbDshTo9B9jn24",
+  authDomain: "meu-su.firebaseapp.com",
+  databaseURL: "https://meu-su-default-rtdb.firebaseio.com",
+  projectId: "meu-su",
+  storageBucket: "meu-su.firebasestorage.app",
+  messagingSenderId: "123781955468",
+  appId: "1:123781955468:web:f4fd0a2824c43b48d9e0a9"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+document.getElementById('todayDate').textContent = new Date().toLocaleDateString('pt-BR');
+
+function fmt(v){ return 'R$ ' + (v || 0).toFixed(2).replace('.', ','); }
+
+db.ref('orders').on('value', snapshot => {
+  const orders = snapshot.val();
+  if(!orders) return;
+
+  const orderList = Object.values(orders);
+
+  let totalRev = 0;
+  let pixRev = 0; let pixCnt = 0;
+  let cardRev = 0; let cardCnt = 0;
+  const itemSales = {};
+
+  orderList.forEach(o => {
+    totalRev += o.total || 0;
+    
+    if(o.paymentMethod === 'pix'){
+      pixRev += o.total || 0;
+      pixCnt++;
+    } else {
+      cardRev += o.total || 0;
+      cardCnt++;
+    }
+
+    if(o.items && Array.isArray(o.items)){
+      o.items.forEach(i => {
+        if(!itemSales[i.name]){
+          itemSales[i.name] = { qty: 0, total: 0 };
+        }
+        itemSales[i.name].qty += i.qty;
+        itemSales[i.name].total += (i.qty * i.price);
+      });
+    }
+  });
+
+  // ATUALIZA CARDS
+  document.getElementById('totalRevenue').textContent = fmt(totalRev);
+  document.getElementById('totalOrdersCount').textContent = `${orderList.length} pedidos realizados`;
+  document.getElementById('pixRevenue').textContent = fmt(pixRev);
+  document.getElementById('pixCount').textContent = `${pixCnt} pedidos`;
+  document.getElementById('cardRevenue').textContent = fmt(cardRev);
+  document.getElementById('cardCount').textContent = `${cardCnt} pedidos`;
+  document.getElementById('avgTicket').textContent = fmt(orderList.length ? totalRev / orderList.length : 0);
+
+  // LISTA MAIS VENDIDOS
+  const sortedItems = Object.entries(itemSales).sort((a,b) => b[1].qty - a[1].qty);
+  const topListEl = document.getElementById('topItemsList');
+  if(sortedItems.length === 0){
+    topListEl.innerHTML = `<tr><td colspan="3" style="text-align:center; color:var(--grey);">Nenhum dado registrado.</td></tr>`;
+  } else {
+    topListEl.innerHTML = sortedItems.map(([name, stat]) => `
+      <tr>
+        <td>${name}</td>
+        <td style="text-align: center;"><strong>${stat.qty}x</strong></td>
+        <td style="text-align: right;">${fmt(stat.total)}</td>
+      </tr>
+    `).join('');
+  }
+
+  // HISTÓRICO DE PEDIDOS
+  const recentListEl = document.getElementById('recentTransactionsList');
+  recentListEl.innerHTML = orderList.reverse().slice(0, 10).map(o => `
+    <tr>
+      <td><strong>#${o.senha}</strong></td>
+      <td>
+        <span class="badge ${o.paymentMethod === 'pix' ? 'badge-pix' : 'badge-card'}">
+          ${o.paymentMethod === 'pix' ? 'Pix' : 'Cartão'}
+        </span>
+      </td>
+      <td style="text-align: right;">${fmt(o.total)}</td>
+    </tr>
+  `).join('');
+});
+</script>
+</body>
+</html>
