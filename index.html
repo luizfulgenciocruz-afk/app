@@ -60,6 +60,8 @@
     justify-content: space-between;
     transition: all 0.2s ease;
     cursor: pointer;
+    width: 100%;
+    text-align: left;
   }
 
   .hub-card:hover, .hub-card:active {
@@ -68,10 +70,7 @@
     transform: translateY(-2px);
   }
 
-  .hub-card.admin-btn {
-    border-color: #444;
-  }
-
+  .hub-card.admin-btn { border-color: #444; }
   .hub-card span { font-size: 22px; }
 
   /* MODAL DE NAVEGAÇÃO DA ADMINISTRAÇÃO */
@@ -100,18 +99,8 @@
     gap: 14px;
   }
 
-  .modal-title {
-    font-family: 'Fraunces', serif;
-    font-size: 24px;
-    color: #FFF;
-    margin-bottom: 4px;
-  }
-
-  .modal-sub {
-    font-size: 14px;
-    color: #AAA;
-    margin-bottom: 12px;
-  }
+  .modal-title { font-family: 'Fraunces', serif; font-size: 24px; color: #FFF; margin-bottom: 4px; }
+  .modal-sub { font-size: 14px; color: #AAA; margin-bottom: 12px; }
 
   .admin-menu-btn {
     background: #282828;
@@ -155,10 +144,10 @@
 <p>Selecione o tipo de acesso:</p>
 
 <div class="hub-grid">
-  <!-- BOTÃO DO CLIENTE (SEM SENHA) -->
-  <a href="cliente.html" class="hub-card">
+  <!-- BOTÃO DO CLIENTE (ENTRA EM TELA CHEIA NA HORA) -->
+  <button onclick="openClientTablet()" class="hub-card">
     <span>📱 Tablet do Cliente</span> ➔
-  </a>
+  </button>
 
   <!-- BOTÃO ADMINISTRADOR (EXIGE SENHA 9963) -->
   <button onclick="openAdminArea()" class="hub-card admin-btn">
@@ -187,6 +176,20 @@
 </div>
 
 <script>
+function openClientTablet() {
+  const elem = document.documentElement;
+  if (elem.requestFullscreen) {
+    elem.requestFullscreen();
+  } else if (elem.webkitRequestFullscreen) {
+    elem.webkitRequestFullscreen();
+  } else if (elem.msRequestFullscreen) {
+    elem.msRequestFullscreen();
+  }
+  setTimeout(() => {
+    window.location.href = "cliente.html";
+  }, 150);
+}
+
 function openAdminArea() {
   const pass = prompt("Acesso Restrito. Digite a senha administrativa:");
   if (pass === "9963") {
