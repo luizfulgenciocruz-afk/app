@@ -369,20 +369,20 @@ let lastCreatedOrder = null;
 
 function fmt(v){ return 'R$ ' + v.toFixed(2).replace('.', ','); }
 
-// FUNÇÃO PARA ENTRAR EM TELA CHEIA (FULLSCREEN)
-function requestFullScreen() {
-  const elem = document.documentElement;
-  if (elem.requestFullscreen) {
-    elem.requestFullscreen();
-  } else if (elem.webkitRequestFullscreen) { /* Safari / Chrome Android */
-    elem.webkitRequestFullscreen();
-  } else if (elem.msRequestFullscreen) { /* IE11 */
-    elem.msRequestFullscreen();
+// TRAVA DE MANTAR TELA CHEIA (FULLSCREEN)
+function ensureFullscreen() {
+  if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+    const elem = document.documentElement;
+    if (elem.requestFullscreen) {
+      elem.requestFullscreen().catch(() => {});
+    } else if (elem.webkitRequestFullscreen) {
+      elem.webkitRequestFullscreen();
+    }
   }
 }
 
 document.getElementById('startOrderBtn').onclick = () => {
-  requestFullScreen();
+  ensureFullscreen();
   document.getElementById('welcomeScreen').classList.add('hide');
 };
 
@@ -586,6 +586,7 @@ function printReceipt(order) {
 }
 
 document.getElementById('sendBtn').onclick = async ()=>{
+  ensureFullscreen();
   const notes = document.getElementById('orderNotes').value.trim();
   const entries = Object.values(cart);
   if(entries.length===0) return;
@@ -632,6 +633,7 @@ document.getElementById('sendBtn').onclick = async ()=>{
     `;
 
     document.getElementById('manualPixConfirmBtn').onclick = () => {
+      ensureFullscreen();
       db.ref(`orders/${orderId}`).update({ paid: true });
       printReceipt(lastCreatedOrder);
 
@@ -672,10 +674,12 @@ document.getElementById('sendBtn').onclick = async ()=>{
 };
 
 document.getElementById('printReceiptBtn').onclick = () => {
+  ensureFullscreen();
   printReceipt(lastCreatedOrder);
 };
 
 document.getElementById('newOrderBtn').onclick = ()=>{
+  ensureFullscreen();
   document.getElementById('confirmScreen').classList.remove('show');
   document.getElementById('welcomeScreen').classList.remove('hide');
 };
