@@ -3,130 +3,130 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Meu-Suíço Foods — Cozinha (KDS)</title>
+<title>Meu-Suíço Foods — Gestão da Cozinha</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-
-<link rel="manifest" href="manifest.json">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="theme-color" content="#C8202B">
-<script>
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js');
-  }
-</script>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@700&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
 
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
 
 <style>
   :root {
-    --red: #C8202B; --red-dark: #8E141C; --red-light: #FBEAEA;
-    --ink: #241F1D; --grey: #7A7370; --paper: #F4F1EA;
-    --card-bg: #FFFFFF; --line: #E2DCD5; --green: #2E7D32;
-    --green-light: #E8F5E9; --amber: #ED6C02; --amber-light: #FFF4E5;
+    --red: #C8202B;
+    --red-dark: #8E141C;
+    --paper: #F8F9FA;
+    --ink: #241F1D;
+    --grey: #7A7370;
+    --line: #E2D8D5;
+    --green: #2E7D32;
+    --green-light: #E8F5E9;
+    --amber: #ED6C02;
+    --amber-light: #FFF4E5;
   }
-  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
-    margin: 0; padding: 0; background: var(--paper); color: var(--ink);
-    font-family: 'Inter', sans-serif; height: 100vh; display: flex;
-    flex-direction: column; overflow: hidden;
+    background-color: var(--paper);
+    color: var(--ink);
+    font-family: 'Inter', sans-serif;
+    padding: 20px;
   }
-  header.topbar {
-    background: var(--red); color: #FFF; padding: 12px 24px;
-    display: flex; align-items: center; justify-content: space-between;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1); z-index: 10;
-  }
-  .title-group { display: flex; align-items: center; gap: 12px; }
-  .title-group h1 { font-family: 'Fraunces', serif; font-size: 22px; margin: 0; }
-  .status-badge {
-    background: rgba(255,255,255,0.2); padding: 4px 10px; border-radius: 20px;
-    font-size: 12px; font-weight: 600;
-  }
-  .kanban-board {
-    flex: 1; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px;
-    padding: 16px; overflow: hidden;
-  }
-  .column {
-    background: #EAE6DF; border-radius: 12px; display: flex; flex-direction: column;
-    max-height: 100%; border: 1px solid var(--line);
-  }
-  .column-header {
-    padding: 14px 16px; font-family: 'Fraunces', serif; font-size: 18px; font-weight: 700;
-    display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--line);
-  }
-  .column-count {
-    background: var(--ink); color: #FFF; font-family: 'Inter'; font-size: 12px;
-    padding: 2px 8px; border-radius: 12px;
-  }
-  .column-body { flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 12px; }
-  .order-card {
-    background: var(--card-bg); border-radius: 10px; border: 1px solid var(--line);
-    padding: 14px; box-shadow: 0 2px 6px rgba(0,0,0,0.04); display: flex; flex-direction: column; gap: 10px;
-  }
-  .order-card.preparo { border-left: 6px solid var(--amber); }
-  .order-card.pronto { border-left: 6px solid var(--green); }
-  .card-head { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #F0F0F0; padding-bottom: 8px; }
-  .senha-tag { font-family: 'Fraunces', serif; font-size: 22px; font-weight: 700; color: var(--red-dark); }
-  .mesa-tag { font-weight: 700; font-size: 14px; background: #F0F0F0; padding: 4px 8px; border-radius: 6px; }
-  .time-tag { font-size: 12px; color: var(--grey); }
-  .items-list { display: flex; flex-direction: column; gap: 6px; }
-  .item-row { display: flex; align-items: baseline; gap: 8px; font-size: 15px; }
-  .item-qty { font-weight: 800; color: var(--red); font-size: 16px; min-width: 24px; }
-  .item-name { font-weight: 600; flex: 1; }
-  .notes-box { background: var(--red-light); color: var(--red-dark); padding: 8px 10px; border-radius: 6px; font-size: 13px; font-weight: 600; }
-  
-  .pay-tag { display: inline-block; padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 800; text-transform: uppercase; }
-  .pay-tag.pending { background: var(--amber-light); color: var(--amber); }
-  .pay-tag.paid { background: var(--green-light); color: var(--green); }
 
-  .card-actions { display: flex; gap: 8px; margin-top: 4px; }
-  .action-btn {
-    flex: 1; padding: 10px; border: none; border-radius: 8px; font-weight: 700;
-    font-size: 13px; cursor: pointer; transition: opacity 0.15s;
+  header {
+    background-color: var(--red);
+    color: #FFF;
+    padding: 16px 24px;
+    border-radius: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
   }
-  .btn-confirm-pay { background: var(--amber); color: #FFF; }
-  .btn-pronto { background: var(--green); color: #FFF; }
-  .btn-entregar { background: var(--ink); color: #FFF; }
-  .btn-cancelar { background: transparent; color: var(--grey); border: 1px solid var(--line); flex: 0; padding: 10px 12px; }
-  .sound-btn { background: rgba(255,255,255,0.2); border: none; color: #FFF; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 12px; }
+  header h1 { font-family: 'Fraunces', serif; font-size: 24px; }
+
+  .orders-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+  }
+
+  .order-card {
+    background: #FFF;
+    border: 2px solid var(--line);
+    border-radius: 16px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  }
+
+  .order-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px dashed var(--line);
+    padding-bottom: 10px;
+  }
+  .order-senha {
+    font-family: 'Fraunces', serif;
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--red);
+  }
+  .order-time { font-size: 13px; color: var(--grey); font-weight: 600; }
+
+  .order-items { font-size: 15px; line-height: 1.6; color: var(--ink); }
+  .order-items div { border-bottom: 1px solid #F5F5F5; padding: 4px 0; }
+
+  .order-notes {
+    background: var(--amber-light);
+    color: var(--amber);
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  .order-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: auto;
+    padding-top: 10px;
+  }
+
+  .btn {
+    border: none;
+    padding: 12px;
+    border-radius: 10px;
+    font-weight: 800;
+    font-size: 14px;
+    cursor: pointer;
+    text-align: center;
+    transition: opacity 0.15s ease;
+  }
+  .btn:active { opacity: 0.8; }
+  .btn-call { background: var(--amber); color: #FFF; }
+  .btn-confirm-pix { background: var(--green); color: #FFF; }
+  .btn-finish { background: var(--red); color: #FFF; }
+
+  .badge-pix-pending {
+    background: #FFF3CD; color: #856404; padding: 6px 12px; border-radius: 8px; font-weight: 700; font-size: 12px; text-align: center;
+  }
+  .badge-pix-ok {
+    background: var(--green-light); color: var(--green); padding: 6px 12px; border-radius: 8px; font-weight: 700; font-size: 12px; text-align: center;
+  }
 </style>
 </head>
 <body>
 
-<header class="topbar">
-  <div class="title-group">
-    <h1>Cozinha &amp; Produção</h1>
-    <span class="status-badge">Conectado</span>
-  </div>
-  <button class="sound-btn" id="soundToggle">🔔 Som Ativo</button>
+<header>
+  <h1>👨‍🍳 Cozinha — Meu-Suíço Foods</h1>
+  <div id="orderCount" style="font-weight: 700;">Pedidos Ativos: 0</div>
 </header>
 
-<div class="kanban-board">
-  <div class="column">
-    <div class="column-header" style="color: var(--amber);">
-      <span>Em Preparo</span>
-      <span class="column-count" id="countPreparo">0</span>
-    </div>
-    <div class="column-body" id="colPreparo"></div>
-  </div>
-
-  <div class="column">
-    <div class="column-header" style="color: var(--green);">
-      <span>Pronto / Balcão</span>
-      <span class="column-count" id="countPronto">0</span>
-    </div>
-    <div class="column-body" id="colPronto"></div>
-  </div>
-
-  <div class="column">
-    <div class="column-header" style="color: var(--grey);">
-      <span>Entregues (Hoje)</span>
-      <span class="column-count" id="countEntregue">0</span>
-    </div>
-    <div class="column-body" id="colEntregue"></div>
-  </div>
-</div>
+<div class="orders-grid" id="ordersGrid"></div>
 
 <script>
 const firebaseConfig = {
@@ -138,139 +138,80 @@ const firebaseConfig = {
   messagingSenderId: "123781955468",
   appId: "1:123781955468:web:f4fd0a2824c43b48d9e0a9"
 };
-
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-let soundEnabled = true;
-let isFirstLoad = true;
-
-const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-function playBeep() {
-  if (!soundEnabled) return;
-  try {
-    const osc = audioContext.createOscillator();
-    const gain = audioContext.createGain();
-    osc.connect(gain); gain.connect(audioContext.destination);
-    osc.type = "sine"; osc.frequency.setValueAtTime(880, audioContext.currentTime);
-    gain.gain.setValueAtTime(0.3, audioContext.currentTime);
-    osc.start(); osc.stop(audioContext.currentTime + 0.3);
-  } catch(e) { console.error(e); }
-}
-
-document.getElementById('soundToggle').onclick = () => {
-  soundEnabled = !soundEnabled;
-  document.getElementById('soundToggle').textContent = soundEnabled ? "🔔 Som Ativo" : "🔕 Mudo";
-};
-
+// ESCUTA PEDIDOS EM TEMPO REAL
 db.ref('orders').on('value', snapshot => {
-  const data = snapshot.val() || {};
-  const orders = Object.values(data);
-  
-  if (!isFirstLoad) {
-    const prevCount = parseInt(document.getElementById('countPreparo').textContent || "0");
-    const currentPreparo = orders.filter(o => o.status === 'preparo').length;
-    if (currentPreparo > prevCount) playBeep();
-  }
-  isFirstLoad = false;
+  const grid = document.getElementById('ordersGrid');
+  const orders = snapshot.val();
 
-  renderBoard(orders);
+  if (!orders) {
+    grid.innerHTML = '<div style="color:var(--grey); font-weight:600; grid-column: 1/-1; text-align:center; padding:60px;">Nenhum pedido ativo no momento.</div>';
+    document.getElementById('orderCount').textContent = 'Pedidos Ativos: 0';
+    return;
+  }
+
+  const activeOrders = Object.values(orders).filter(o => o.status !== 'entregue');
+  document.getElementById('orderCount').textContent = `Pedidos Ativos: ${activeOrders.length}`;
+
+  grid.innerHTML = activeOrders.reverse().map(o => {
+    const time = new Date(o.createdAt).toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+    const itemsHtml = o.items.map(i => `<div><strong>${i.qty}x</strong> ${i.name}</div>`).join('');
+    const isPix = o.paymentMethod === 'pix';
+    const isPaid = o.paid === true;
+
+    return `
+      <div class="order-card">
+        <div class="order-header">
+          <span class="order-senha">SENHA #${o.senha}</span>
+          <span class="order-time">${time}</span>
+        </div>
+
+        <div class="order-items">${itemsHtml}</div>
+
+        ${o.notes ? `<div class="order-notes">Obs: ${o.notes}</div>` : ''}
+
+        ${isPix ? (isPaid 
+          ? `<div class="badge-pix-ok">✓ Pix Confirmado</div>` 
+          : `<div class="badge-pix-pending">⏳ Aguardando Pix</div>`) : ''}
+
+        <div class="order-actions">
+          ${isPix && !isPaid ? `
+            <button class="btn btn-confirm-pix" onclick="confirmPix('${o.id}')">Confirmar Pix Manual</button>
+          ` : ''}
+          
+          <button class="btn btn-call" onclick="callSenha('${o.senha}')">📢 Chamar no Painel</button>
+          <button class="btn btn-finish" onclick="finishOrder('${o.id}')">✓ Finalizar / Entregue</button>
+        </div>
+      </div>
+    `;
+  }).join('');
 });
 
-function updateStatus(orderId, newStatus) {
-  db.ref('orders/' + orderId).update({ status: newStatus });
-}
-
-function confirmPayment(orderId) {
-  db.ref('orders/' + orderId).update({ paid: true });
-}
-
-function renderBoard(orders) {
-  const colPreparo = document.getElementById('colPreparo');
-  const colPronto = document.getElementById('colPronto');
-  const colEntregue = document.getElementById('colEntregue');
-
-  colPreparo.innerHTML = ''; colPronto.innerHTML = ''; colEntregue.innerHTML = '';
-  let cPreparo = 0, cPronto = 0, cEntregue = 0;
-
-  orders.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
-
-  orders.forEach(order => {
-    const card = document.createElement('div');
-    const time = new Date(order.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-    
-    const itemsHtml = order.items.map(i => `
-      <div class="item-row">
-        <span class="item-qty">${i.qty}x</span>
-        <span class="item-name">${i.name}</span>
-      </div>
-    `).join('');
-
-    const notesHtml = order.notes ? `<div class="notes-box">Obs: ${order.notes}</div>` : '';
-
-    const isPix = order.paymentMethod === 'pix';
-    const isPaid = order.paid === true;
-
-    const payBadge = isPix 
-      ? (isPaid ? `<span class="pay-tag paid">Pix Pago ✓</span>` : `<span class="pay-tag pending">Aguardando Pix</span>`)
-      : `<span class="pay-tag pending">Pagar no Cartão</span>`;
-
-    if (order.status === 'preparo') {
-      cPreparo++;
-      card.className = 'order-card preparo';
-      card.innerHTML = `
-        <div class="card-head">
-          <span class="senha-tag">#${order.senha}</span>
-          <div>
-            <span class="mesa-tag">Mesa ${order.table}</span>
-            ${payBadge}
-          </div>
-          <span class="time-tag">${time}</span>
-        </div>
-        <div class="items-list">${itemsHtml}</div>
-        ${notesHtml}
-        <div class="card-actions">
-          <button class="action-btn btn-cancelar" onclick="updateStatus('${order.id}', 'cancelado')">✕</button>
-          ${!isPaid ? `<button class="action-btn btn-confirm-pay" onclick="confirmPayment('${order.id}')">Confirmar Pix</button>` : ''}
-          <button class="action-btn btn-pronto" onclick="updateStatus('${order.id}', 'pronto')">Concluir</button>
-        </div>
-      `;
-      colPreparo.appendChild(card);
-
-    } else if (order.status === 'pronto') {
-      cPronto++;
-      card.className = 'order-card pronto';
-      card.innerHTML = `
-        <div class="card-head">
-          <span class="senha-tag">#${order.senha}</span>
-          <span class="mesa-tag">Mesa ${order.table}</span>
-          <span class="time-tag">${time}</span>
-        </div>
-        <div class="items-list">${itemsHtml}</div>
-        ${notesHtml}
-        <div class="card-actions">
-          <button class="action-btn btn-entregar" onclick="updateStatus('${order.id}', 'entregue')">Marcar Entregue</button>
-        </div>
-      `;
-      colPronto.appendChild(card);
-
-    } else if (order.status === 'entregue') {
-      cEntregue++; card.className = 'order-card'; card.style.opacity = '0.6';
-      card.innerHTML = `
-        <div class="card-head">
-          <span class="senha-tag" style="color:var(--grey)">#${order.senha}</span>
-          <span class="mesa-tag">Mesa ${order.table}</span>
-          <span class="time-tag">${time}</span>
-        </div>
-        <div class="items-list">${itemsHtml}</div>
-      `;
-      colEntregue.prepend(card);
-    }
+// FUNÇÃO PARA CHAMAR SENHA NO PAINEL HDMI
+function callSenha(senha) {
+  const timestamp = Date.now();
+  
+  // 1. Grava a última senha para acionar a TV e o Som
+  db.ref('last_called').set({
+    senha: senha,
+    timestamp: timestamp
   });
 
-  document.getElementById('countPreparo').textContent = cPreparo;
-  document.getElementById('countPronto').textContent = cPronto;
-  document.getElementById('countEntregue').textContent = cEntregue;
+  // 2. Salva no histórico do painel
+  db.ref('called_history/' + timestamp).set({
+    senha: senha,
+    timestamp: timestamp
+  });
+}
+
+function confirmPix(orderId) {
+  db.ref(`orders/${orderId}`).update({ paid: true });
+}
+
+function finishOrder(orderId) {
+  db.ref(`orders/${orderId}`).update({ status: 'entregue' });
 }
 </script>
 </body>
