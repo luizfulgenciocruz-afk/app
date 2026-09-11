@@ -2,684 +2,93 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Meu-Suíço Foods — Cardápio Digital</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Meu-Suíço Foods — Sistema Integrado</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,500;0,600;0,700;1,500&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-
-<!-- PWA Config Header -->
-<link rel="manifest" href="manifest.json">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#C8202B">
-
-<script>
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.getRegistrations().then(function(registrations) {
-      for(let registration of registrations) {
-        registration.unregister();
-      }
-    });
-  }
-</script>
-
-<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@700;800&family=Inter:wght@600;700;800&display=swap" rel="stylesheet">
 
 <style>
-  :root{
-    --red:#C8202B; --red-dark:#8E141C; --red-light:#FBEAEA;
-    --ink:#241F1D; --grey:#7A7370; --paper:#FFFFFF; --line:#F0D6D5; --white:#FFFFFF;
-    --green:#2E7D32; --green-light:#E8F5E9;
+  :root {
+    --red: #C8202B;
+    --red-dark: #8E141C;
+    --paper: #F8F9FA;
+    --ink: #111111;
   }
-  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
-  html,body{margin:0; padding:0; height:100%; overscroll-behavior:none;}
-  body{
-    background:var(--paper); color:var(--ink); font-family:'Inter',sans-serif;
-    display:flex; flex-direction:column; height:100vh; overflow:hidden; user-select:none;
-    position: relative;
-  }
-  
-  /* TELA DE BOAS-VINDAS INICIAL */
-  .welcome-screen {
-    position: fixed; inset: 0; z-index: 50;
-    background: linear-gradient(135deg, var(--red-dark) 0%, var(--red) 100%);
-    color: var(--white); display: flex; flex-direction: column;
-    align-items: center; justify-content: center; text-align: center;
-    padding: 30px 24px; transition: transform 0.4s ease, opacity 0.4s ease;
-  }
-  .welcome-screen.hide {
-    transform: translateY(-100%);
-    opacity: 0;
-    pointer-events: none;
-  }
-  .welcome-logo-container {
-    width: 240px; height: 240px; border-radius: 50%;
-    background: var(--white); padding: 8px;
-    box-shadow: 0 12px 32px rgba(0,0,0,0.35);
-    display: flex; align-items: center; justify-content: center;
-    margin-bottom: 24px; border: 6px solid rgba(255,255,255,0.3);
-    overflow: hidden;
-  }
-  .welcome-logo-img {
-    width: 100%; height: 100%; border-radius: 50%; object-fit: cover;
-  }
-  .welcome-title {
-    font-family: 'Fraunces', serif; font-size: 42px; font-weight: 700;
-    margin: 0 0 8px 0; letter-spacing: 0.5px;
-  }
-  .welcome-subtitle {
-    font-size: 19px; opacity: 0.9; margin: 0 0 36px 0; font-weight: 500;
-  }
-  .start-order-btn {
-    background: var(--white); color: var(--red); border: none;
-    padding: 18px 48px; border-radius: 99px; font-weight: 800; font-size: 20px;
-    cursor: pointer; box-shadow: 0 8px 24px rgba(0,0,0,0.2);
-    transition: transform 0.15s ease, background-color 0.2s ease;
-    display: flex; align-items: center; gap: 12px;
-  }
-  .start-order-btn:active { transform: scale(0.96); }
-
-  /* MARCA D'ÁGUA DE FUNDO FIXA NO CARDÁPIO */
-  body::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background-image: url('https://raw.githubusercontent.com/luizfulgenciocruz-afk/app/main/logo.jpg');
-    background-repeat: no-repeat;
-    background-position: center;
-    background-size: 340px;
-    opacity: 0.25;
-    z-index: 0;
-    pointer-events: none;
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background-color: var(--ink);
+    color: #FFFFFF;
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    text-align: center;
   }
 
-  h1,h2,h3,.display{font-family:'Fraunces',serif;}
-
-  header.topbar{
-    background:var(--red); color:var(--white); padding:16px 22px;
-    display:flex; align-items:center; justify-content:space-between; gap:12px; flex-shrink:0;
-    box-shadow:0 3px 6px rgba(0,0,0,0.12); z-index:20; position:relative;
+  .logo-container {
+    width: 140px; height: 140px; border-radius: 50%;
+    background: #FFF; padding: 6px; margin-bottom: 20px;
+    box-shadow: 0 8px 24px rgba(250, 250, 250, 0.15);
   }
-  .brand{display:flex; align-items:center; gap:12px;}
-  .brand .name{font-size:24px; font-weight:700; font-style:italic; letter-spacing:0.2px;}
-  .brand .tag{font-size:12px; opacity:0.85; font-family:'Inter';}
+  .logo-container img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
 
-  /* BOTÃO CARRINHO AMPLIADO */
-  .cart-btn{
-    background:var(--white); border:2px solid var(--white); color:var(--red);
-    border-radius:12px; padding:12px 24px; font-family:'Inter'; font-size:18px; font-weight:800;
-    display:flex; align-items:center; gap:10px; cursor:pointer; position:relative;
-    box-shadow: 0 3px 8px rgba(0,0,0,0.15);
-  }
-  .cart-count{
-    background:var(--red-dark); color:#fff; font-size:13px; font-weight:800; border-radius:20px;
-    min-width:24px; height:24px; display:flex; align-items:center; justify-content:center; padding:0 6px;
+  h1 { font-family: 'Fraunces', serif; font-size: 36px; margin-bottom: 8px; }
+  p { color: #AAA; font-size: 16px; margin-bottom: 36px; }
+
+  .hub-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    width: min(400px, 100%);
   }
 
-  nav.cats{
-    display:flex; gap:8px; padding:14px 18px; overflow-x:auto;
-    background:var(--red-light); border-bottom:1px solid var(--line); flex-shrink:0; z-index:10; position:relative;
-  }
-  nav.cats::-webkit-scrollbar{display:none;}
-  .cat-btn{
-    flex-shrink:0; padding:10px 22px; border-radius:999px; border:1.5px solid var(--line);
-    background:var(--paper); color:var(--ink); font-family:'Inter'; font-size:15px; font-weight:700; cursor:pointer;
-  }
-  .cat-btn.active{ background:var(--red); border-color:var(--red); color:var(--white); }
-
-  main{flex:1; overflow-y:auto; padding:20px; z-index:10; position:relative;}
-  .section-title{font-size:26px; font-weight:700; margin:2px 0 16px 2px;}
-  .grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(240px,1fr)); gap:16px;}
-  .item-card{
-    background:rgba(255,255,255,0.88); border:1.5px solid var(--line); border-radius:16px;
-    padding:16px; display:flex; flex-direction:column; gap:8px; backdrop-filter: blur(3px);
-  }
-  .item-top{display:flex; gap:10px; align-items:flex-start;}
-  .item-badge{
-    width:40px; height:40px; border-radius:10px; background:var(--red); color:var(--white);
-    display:flex; align-items:center; justify-content:center; font-family:'Fraunces'; font-weight:600; font-size:18px; flex-shrink:0;
-  }
-  .item-name{font-size:17px; font-weight:700; line-height:1.25;}
-  .item-desc{font-size:13px; color:var(--grey); line-height:1.4; min-height:32px;}
-  .item-bottom{display:flex; align-items:center; justify-content:space-between; margin-top:auto; padding-top:6px;}
-  .item-price{font-family:'Fraunces'; font-weight:700; font-size:18px; color:var(--red-dark);}
-  .add-btn{
-    background:var(--red); color:var(--white); border:none; border-radius:10px;
-    padding:10px 18px; font-weight:700; font-size:14px; cursor:pointer;
-  }
-  .stepper{display:flex; align-items:center; gap:10px; background:var(--red); border-radius:10px; padding:4px 8px;}
-  .stepper button{
-    width:28px; height:28px; border-radius:6px; border:none; background:rgba(255,255,255,0.2);
-    color:var(--white); font-size:18px; font-weight:700; cursor:pointer; line-height:1;
-  }
-  .stepper span{color:var(--white); font-weight:700; min-width:18px; text-align:center; font-size:15px;}
-
-  .overlay{position:fixed; inset:0; background:rgba(36,31,29,0.5); z-index:30; display:none;}
-  .overlay.show{display:block;}
-  .sheet{
-    position:fixed; right:0; top:0; bottom:0; width:min(420px, 94vw);
-    background:var(--paper); z-index:31; display:flex; flex-direction:column;
-    transform:translateX(100%); transition:transform 0.22s ease; box-shadow:-8px 0 24px rgba(0,0,0,0.15);
-  }
-  .sheet.show{transform:translateX(0);}
-  .sheet-header{background:var(--red); color:var(--white); padding:20px; display:flex; align-items:center; justify-content:space-between; flex-shrink:0;}
-  .sheet-header h2{margin:0; font-size:22px; font-weight:700;}
-  .close-x{background:rgba(255,255,255,0.16); border:none; color:var(--white); width:36px; height:36px; border-radius:10px; font-size:18px; cursor:pointer;}
-  .sheet-body{flex:1; overflow-y:auto; padding:16px 20px;}
-  .cart-empty{text-align:center; color:var(--grey); padding:60px 20px; font-size:15px;}
-  .cart-row{display:flex; align-items:center; gap:10px; padding:14px 0; border-bottom:1px solid var(--line);}
-  .cart-row-info{flex:1;}
-  .cart-row-name{font-weight:700; font-size:15px;}
-  .cart-row-price{font-size:13px; color:var(--grey); margin-top:2px;}
-  .cart-row-total{font-family:'Fraunces'; font-weight:700; color:var(--red-dark); font-size:15px; min-width:62px; text-align:right;}
-  .remove-btn{background:none; border:none; color:var(--red-dark); font-size:20px; cursor:pointer; padding:4px;}
-  .notes{
-    width:100%; margin-top:14px; border:1.5px solid var(--line); border-radius:10px;
-    padding:12px; font-family:'Inter'; font-size:14px; resize:none; background:var(--paper); color:var(--ink);
-  }
-  
-  .pay-option-title { font-size:14px; font-weight:700; margin-top:16px; color:var(--grey); }
-  .pay-options { display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:8px; }
-  .pay-card {
-    border: 1.5px solid var(--line); border-radius: 12px; padding: 14px 10px; text-align: center;
-    cursor: pointer; font-size: 14px; font-weight: 700; color: var(--ink);
-    display: flex; flex-direction: column; align-items: center; gap: 4px;
-  }
-  .pay-card.active { border-color: var(--red); background: var(--red-light); color: var(--red-dark); }
-
-  .sheet-footer{padding:18px 20px 20px; border-top:1px solid var(--line); flex-shrink:0; background:var(--paper);}
-  .total-row{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:14px;}
-  .total-row .label{font-size:15px; color:var(--grey);}
-  .total-row .value{font-family:'Fraunces'; font-size:26px; font-weight:800; color:var(--red-dark);}
-  .send-btn{
-    width:100%; background:var(--red); border:1px solid var(--red-dark); color:var(--white);
-    padding:16px; border-radius:12px; font-weight:800; font-size:17px; cursor:pointer;
-  }
-  .send-btn:disabled{opacity:0.4; cursor:not-allowed;}
-
-  .confirm-screen{
-    position:fixed; inset:0; z-index:40; background:var(--red); color:var(--white);
-    display:none; flex-direction:column; align-items:center; justify-content:center;
-    text-align:center; padding:24px; overflow-y:auto;
-  }
-  .confirm-screen.show{display:flex;}
-  .confirm-screen .label-top{font-size:15px; letter-spacing:0.5px; opacity:0.85; margin-bottom:2px;}
-  .senha-circle{
-    width:130px; height:130px; border-radius:50%; background:var(--white); color:var(--red);
-    display:flex; align-items:center; justify-content:center; font-family:'Fraunces';
-    font-weight:800; font-size:52px; margin:10px 0 16px; border:6px solid rgba(255,255,255,0.35);
-  }
-  .confirm-screen h2{font-size:24px; margin:0 0 6px; font-weight:700;}
-  .confirm-screen p{opacity:0.9; font-size:15px; margin:0 0 16px; max-width:340px; line-height:1.4;}
-  
-  .pay-box {
-    background: var(--white); color: var(--ink); border-radius: 16px; padding: 20px;
-    width: min(350px, 100%); margin-bottom: 16px; box-shadow: 0 4px 14px rgba(0,0,0,0.15);
-  }
-  .pay-box-title { font-weight: 700; font-size: 16px; margin-bottom: 8px; color: var(--red-dark); }
-  .qr-code-img { width: 210px; height: 210px; margin: 8px 0; border-radius: 8px; border: 1px solid #EEE; }
-  .pay-instructions { font-size: 13.5px; color: var(--grey); line-height: 1.4; margin: 6px 0; }
-  .price-highlight { font-family: 'Fraunces'; font-weight: 800; font-size: 24px; color: var(--red-dark); margin: 6px 0; }
-  
-  .confirm-pix-btn {
-    background: var(--green); color: var(--white); border: none;
-    padding: 16px; border-radius: 12px; font-weight: 800; font-size: 16px; cursor: pointer;
-    margin-top: 12px; width: 100%; box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+  .hub-card {
+    background: linear-gradient(135deg, #222 0%, #181818 100%);
+    border: 2px solid #333;
+    color: #FFF;
+    text-decoration: none;
+    padding: 20px;
+    border-radius: 16px;
+    font-size: 18px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: all 0.2s ease;
   }
 
-  .print-btn {
-    background: #241F1D; color: #FFF; border: none; padding: 14px 24px;
-    border-radius: 12px; font-weight: 700; font-size: 15px; cursor: pointer; margin-bottom: 12px;
-    display: flex; align-items: center; gap: 8px; justify-content: center; width: min(350px, 100%);
+  .hub-card:hover, .hub-card:active {
+    border-color: var(--red);
+    background: var(--red);
+    transform: translateY(-2px);
   }
 
-  .payment-success-badge {
-    background: var(--green-light); color: var(--green); border: 2px solid var(--green);
-    padding: 16px; border-radius: 12px; font-weight: 800; font-size: 16px;
-    display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 12px;
-  }
-
-  .confirm-screen button.primary-btn{
-    background:var(--white); color:var(--red); border:none; padding:14px 30px;
-    border-radius:12px; font-weight:800; font-size:15px; cursor:pointer;
-  }
+  .hub-card span { font-size: 24px; }
 </style>
 </head>
 <body>
 
-<!-- TELA INICIAL DE BOAS-VINDAS -->
-<div class="welcome-screen" id="welcomeScreen">
-  <div class="welcome-logo-container">
-    <img src="https://raw.githubusercontent.com/luizfulgenciocruz-afk/app/main/logo.jpg" alt="Logo M-Suíço" class="welcome-logo-img">
-  </div>
-  <h1 class="welcome-title">Meu-Suíço Foods</h1>
-  <p class="welcome-subtitle">Seja bem-vindo! Faça o seu pedido no tablet.</p>
-  <button class="start-order-btn" id="startOrderBtn">
-    <span>COMEÇAR PEDIDO</span> ➔
-  </button>
+<div class="logo-container">
+  <img src="https://raw.githubusercontent.com/luizfulgenciocruz-afk/app/main/logo.jpg" alt="Logo">
 </div>
 
-<header class="topbar">
-  <div class="brand">
-    <div style="width:44px; height:44px; background:#FFF; color:var(--red); border-radius:10px; display:flex; align-items:center; justify-content:center; font-family:'Fraunces'; font-weight:800; font-size:20px;">MS</div>
-    <div>
-      <div class="name">Meu-Suíço Foods</div>
-      <span class="tag">cardápio digital</span>
-    </div>
-  </div>
-  <button class="cart-btn" id="cartBtn">
-    🛒 Carrinho <span class="cart-count" id="cartCount">0</span>
-  </button>
-</header>
+<h1>Meu-Suíço Foods</h1>
+<p>Selecione o ambiente que deseja acessar:</p>
 
-<nav class="cats" id="catsNav"></nav>
-
-<main id="mainMenu">
-  <div id="menuContent"></div>
-</main>
-
-<div class="overlay" id="overlay"></div>
-<div class="sheet" id="cartSheet">
-  <div class="sheet-header">
-    <h2>Seu pedido</h2>
-    <button class="close-x" id="closeCart">✕</button>
-  </div>
-  <div class="sheet-body">
-    <div id="cartList"></div>
-    <textarea class="notes" id="orderNotes" rows="2" placeholder="Observações (ex.: sem cebola...)"></textarea>
-
-    <div class="pay-option-title">Forma de Pagamento</div>
-    <div class="pay-options">
-      <div class="pay-card active" id="payPix" data-method="pix">
-        <span>📱 Pix</span>
-        <small style="opacity:0.7;">Pague na tela</small>
-      </div>
-      <div class="pay-card" id="payCard" data-method="card">
-        <span>💳 Cartão</span>
-        <small style="opacity:0.7;">Pague no Balcão</small>
-      </div>
-    </div>
-  </div>
-  <div class="sheet-footer">
-    <div class="total-row">
-      <span class="label">Total</span>
-      <span class="value" id="cartTotal">R$ 0,00</span>
-    </div>
-    <button class="send-btn" id="sendBtn" disabled>Enviar pedido</button>
-  </div>
+<div class="hub-grid">
+  <a href="cliente.html" class="hub-card">
+    <span>📱 Tablet do Cliente</span> ➔
+  </a>
+  <a href="cozinha.html" class="hub-card">
+    <span>👨‍🍳 Tela da Cozinha</span> ➔
+  </a>
+  <a href="painel.html" class="hub-card">
+    <span>📺 Painel de Senhas</span> ➔
+  </a>
 </div>
 
-<div class="confirm-screen" id="confirmScreen">
-  <div class="label-top">SUA SENHA DE ATENDIMENTO</div>
-  <div class="senha-circle" id="senhaNumber">00</div>
-  <h2>Pedido Enviado!</h2>
-  <p id="confirmDetail">Guarde este número. Ele será chamado quando seu pedido estiver pronto.</p>
-
-  <div class="pay-box" id="payBox"></div>
-
-  <button class="print-btn" id="printReceiptBtn">🖨️ Imprimir Senha e Comprovante</button>
-  <button class="primary-btn" id="newOrderBtn">Fazer novo pedido</button>
-</div>
-
-<script>
-const PIX_KEY_CNPJ = "58442824000100";
-const MERCHANT_NAME = "LUIZ GUSTAVO F";
-const MERCHANT_CITY = "SAO JOSE DOS P";
-
-const MENU = [
-  { cat:"Bebidas", items:[
-    {id:"b1", name:"Água Normal", desc:"", price:4.00},
-    {id:"b2", name:"Água com Gás", desc:"", price:4.00},
-    {id:"b3", name:"Soda Italiana Maçã Verde", desc:"500ml", price:15.00},
-    {id:"b4", name:"Soda Italiana Morango", desc:"500ml", price:15.00},
-    {id:"b5", name:"Soda Italiana Gengibre", desc:"500ml", price:15.00},
-    {id:"b6", name:"Soda Italiana Limão Siciliano", desc:"500ml", price:15.00},
-    {id:"b7", name:"Soda Italiana Jabuticaba", desc:"500ml", price:15.00},
-    {id:"b8", name:"Soda Italiana Tangerina", desc:"500ml", price:15.00},
-  ]},
-  { cat:"Crepe Francês", items:[
-    {id:"cf1", name:"Queijo e Orégano", desc:"", price:25.00},
-    {id:"cf2", name:"Queijo c/ Milho e Requeijão", desc:"", price:25.00},
-    {id:"cf3", name:"Pizza", desc:"Queijo, tomate, orégano e requeijão", price:25.00},
-    {id:"cf4", name:"Queijo c/ Azeitona e Requeijão", desc:"", price:25.00},
-    {id:"cf5", name:"Chocolate ao Leite", desc:"", price:25.00},
-    {id:"cf6", name:"Chocolate Branco", desc:"", price:25.00},
-    {id:"cf7", name:"Sonho de Valsa", desc:"", price:25.00},
-    {id:"cf8", name:"Nutella com Morango", desc:"", price:25.00},
-    {id:"cf9", name:"Nutella com Banana", desc:"", price:25.00},
-    {id:"cf10", name:"Prestígio", desc:"", price:25.00},
-  ]},
-  { cat:"Crepe Suíço", items:[
-    {id:"cs1", name:"Queijo", desc:"", price:16.00},
-    {id:"cs2", name:"Pizza", desc:"", price:16.00},
-    {id:"cs3", name:"Queijo e Milho", desc:"", price:16.00},
-    {id:"cs4", name:"Queijo e Azeitona", desc:"", price:16.00},
-    {id:"cs5", name:"Chocolate ao Leite", desc:"", price:16.00},
-    {id:"cs6", name:"Chocolate Branco", desc:"", price:16.00},
-    {id:"cs7", name:"Banana e Canela", desc:"", price:16.00},
-    {id:"cs8", name:"Prestígio", desc:"", price:16.00},
-    {id:"cs9", name:"Sonho de Valsa", desc:"", price:16.00},
-    {id:"cs10", name:"Bis", desc:"", price:16.00},
-    {id:"cs11", name:"Stikadinho", desc:"", price:16.00},
-  ]},
-];
-
-let cart = {};
-let activeCat = MENU[0].cat;
-let selectedPaymentMethod = 'pix';
-let lastCreatedOrder = null;
-
-function fmt(v){ return 'R$ ' + v.toFixed(2).replace('.', ','); }
-
-// CONTROLE DA TELA DE BOAS-VINDAS
-document.getElementById('startOrderBtn').onclick = () => {
-  document.getElementById('welcomeScreen').classList.add('hide');
-};
-
-function getPixCode(key, name, city, value, txid = "***") {
-  function emv(id, val) {
-    const len = val.length.toString().padStart(2, '0');
-    return `${id}${len}${val}`;
-  }
-
-  function getCrc16(payload) {
-    let crc = 0xFFFF;
-    for (let i = 0; i < payload.length; i++) {
-      crc ^= payload.charCodeAt(i) << 8;
-      for (let j = 0; j < 8; j++) {
-        if ((crc & 0x8000) !== 0) {
-          crc = (crc << 1) ^ 0x1021;
-        } else {
-          crc = crc << 1;
-        }
-        crc &= 0xFFFF;
-      }
-    }
-    return crc.toString(16).toUpperCase().padStart(4, '0');
-  }
-
-  const cleanKey = key.replace(/[^0-9]/g, '');
-  const cleanName = name.substring(0, 25).toUpperCase();
-  const cleanCity = city.substring(0, 15).toUpperCase();
-  const formattedVal = value.toFixed(2);
-
-  const accountInfo = emv('00', 'br.gov.bcb.pix') + emv('01', cleanKey);
-  const addData = emv('05', txid);
-
-  let raw = 
-    emv('00', '01') +
-    emv('26', accountInfo) +
-    emv('52', '0000') +
-    emv('53', '986') +
-    emv('54', formattedVal) +
-    emv('58', 'BR') +
-    emv('59', cleanName) +
-    emv('60', cleanCity) +
-    emv('62', addData) +
-    '6304';
-
-  return raw + getCrc16(raw);
-}
-
-function renderCats(){
-  const nav = document.getElementById('catsNav');
-  nav.innerHTML = MENU.map(c =>
-    `<button class="cat-btn ${c.cat===activeCat?'active':''}" data-cat="${c.cat}">${c.cat}</button>`
-  ).join('');
-  nav.querySelectorAll('.cat-btn').forEach(btn=>{
-    btn.onclick = ()=>{ activeCat = btn.dataset.cat; renderCats(); renderMenu(); };
-  });
-}
-
-function renderMenu(){
-  const cat = MENU.find(c=>c.cat===activeCat);
-  document.getElementById('menuContent').innerHTML = `
-    <div class="section-title">${cat.cat}</div>
-    <div class="grid">${cat.items.map(item => itemCardHtml(item)).join('')}</div>
-  `;
-  cat.items.forEach(item=>{
-    const addBtn = document.getElementById('add-'+item.id);
-    if(addBtn) addBtn.onclick = ()=> changeQty(item, 1);
-    const minusBtn = document.getElementById('minus-'+item.id);
-    if(minusBtn) minusBtn.onclick = ()=> changeQty(item, -1);
-    const plusBtn = document.getElementById('plus-'+item.id);
-    if(plusBtn) plusBtn.onclick = ()=> changeQty(item, 1);
-  });
-}
-
-function itemCardHtml(item){
-  const qty = cart[item.id] ? cart[item.id].qty : 0;
-  const initial = item.name.charAt(0);
-  return `
-    <div class="item-card">
-      <div class="item-top">
-        <div class="item-badge">${initial}</div>
-        <div><div class="item-name">${item.name}</div></div>
-      </div>
-      <div class="item-desc">${item.desc}</div>
-      <div class="item-bottom">
-        <span class="item-price">${fmt(item.price)}</span>
-        ${qty===0
-          ? `<button class="add-btn" id="add-${item.id}">Adicionar</button>`
-          : `<div class="stepper"><button id="minus-${item.id}">−</button><span>${qty}</span><button id="plus-${item.id}">+</button></div>`
-        }
-      </div>
-    </div>
-  `;
-}
-
-function changeQty(item, delta){
-  if(!cart[item.id]) cart[item.id] = { item, qty:0 };
-  cart[item.id].qty += delta;
-  if(cart[item.id].qty <= 0) delete cart[item.id];
-  renderMenu(); renderCartCount(); renderCartSheet();
-}
-
-function renderCartCount(){
-  const total = Object.values(cart).reduce((s,c)=>s+c.qty,0);
-  document.getElementById('cartCount').textContent = total;
-}
-
-function cartTotalValue(){
-  return Object.values(cart).reduce((s,c)=> s + c.qty*c.item.price, 0);
-}
-
-function renderCartSheet(){
-  const list = document.getElementById('cartList');
-  const entries = Object.values(cart);
-  if(entries.length===0){
-    list.innerHTML = `<div class="cart-empty">Seu carrinho está vazio.<br>Toque em um item do cardápio para adicionar.</div>`;
-  } else {
-    list.innerHTML = entries.map(c => `
-      <div class="cart-row">
-        <div class="cart-row-info">
-          <div class="cart-row-name">${c.qty}x ${c.item.name}</div>
-          <div class="cart-row-price">${fmt(c.item.price)} cada</div>
-        </div>
-        <div class="cart-row-total">${fmt(c.qty*c.item.price)}</div>
-        <button class="remove-btn" data-id="${c.item.id}">✕</button>
-      </div>
-    `).join('');
-    list.querySelectorAll('.remove-btn').forEach(btn=>{
-      btn.onclick = ()=>{ delete cart[btn.dataset.id]; renderMenu(); renderCartCount(); renderCartSheet(); };
-    });
-  }
-  document.getElementById('cartTotal').textContent = fmt(cartTotalValue());
-  document.getElementById('sendBtn').disabled = entries.length===0;
-}
-
-document.getElementById('payPix').onclick = () => setPaymentMethod('pix');
-document.getElementById('payCard').onclick = () => setPaymentMethod('card');
-
-function setPaymentMethod(method) {
-  selectedPaymentMethod = method;
-  document.getElementById('payPix').classList.toggle('active', method === 'pix');
-  document.getElementById('payCard').classList.toggle('active', method === 'card');
-}
-
-const overlay = document.getElementById('overlay');
-const sheet = document.getElementById('cartSheet');
-function openCart(){ overlay.classList.add('show'); sheet.classList.add('show'); }
-function closeCart(){ overlay.classList.remove('show'); sheet.classList.remove('show'); }
-document.getElementById('cartBtn').onclick = openCart;
-document.getElementById('closeCart').onclick = closeCart;
-overlay.onclick = closeCart;
-
-const firebaseConfig = {
-  apiKey: "AIzaSyCQxr8EkaR0bwdvX9KjZXbDshTo9B9jn24",
-  authDomain: "meu-su.firebaseapp.com",
-  databaseURL: "https://meu-su-default-rtdb.firebaseio.com",
-  projectId: "meu-su",
-  storageBucket: "meu-su.firebasestorage.app",
-  messagingSenderId: "123781955468",
-  appId: "1:123781955468:web:f4fd0a2824c43b48d9e0a9"
-};
-firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
-
-async function nextSenha(){
-  const result = await db.ref('senha_counter').transaction(current => {
-    let n = (current || 0) + 1;
-    if(n > 99) n = 1;
-    return n;
-  });
-  const n = result.snapshot.val();
-  return String(n).padStart(2, '0');
-}
-
-function printReceipt(order) {
-  if (!order) return;
-  const itemsText = order.items.map(i => `${i.qty}x ${i.name} (${fmt(i.qty * i.price)})`).join('%0A');
-  const dateStr = new Date(order.createdAt).toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
-
-  const receiptText = 
-    `MEU-SUICO FOODS%0A` +
-    `--------------------------------%0A` +
-    `SENHA: #${order.senha}%0A` +
-    `HORA: ${dateStr}%0A` +
-    `PAGAMENTO: ${order.paymentMethod === 'pix' ? 'PIX' : 'CARTAO'}%0A` +
-    `--------------------------------%0A` +
-    `${itemsText}%0A` +
-    `--------------------------------%0A` +
-    `TOTAL: ${fmt(order.total)}%0A` +
-    `${order.notes ? `OBS: ${order.notes}%0A` : ''}` +
-    `--------------------------------%0A` +
-    `Obrigado pela preferencia!%0A%0A%0A`;
-
-  const rawbtUrl = `intent:${receiptText}#Intent;scheme=rawbt;package=ru.a404m.rawbt;end;`;
-
-  try {
-    window.location.href = rawbtUrl;
-  } catch (e) {
-    window.print();
-  }
-}
-
-document.getElementById('sendBtn').onclick = async ()=>{
-  const notes = document.getElementById('orderNotes').value.trim();
-  const entries = Object.values(cart);
-  if(entries.length===0) return;
-
-  const senha = await nextSenha();
-  const total = cartTotalValue();
-  const orderId = 'order_' + Date.now();
-
-  const order = {
-    id: orderId,
-    senha: senha,
-    items: entries.map(c=>({ name:c.item.name, qty:c.qty, price:c.item.price })),
-    total: total,
-    notes: notes,
-    paymentMethod: selectedPaymentMethod,
-    paid: false,
-    status: 'preparo',
-    createdAt: new Date().toISOString(),
-  };
-
-  lastCreatedOrder = order;
-
-  try{
-    await db.ref('orders/'+order.id).set(order);
-  }catch(e){ console.error('Falha ao salvar pedido', e); }
-
-  document.getElementById('senhaNumber').textContent = senha;
-  const payBox = document.getElementById('payBox');
-
-  if(selectedPaymentMethod === 'pix'){
-    const pixPayload = getPixCode(PIX_KEY_CNPJ, MERCHANT_NAME, MERCHANT_CITY, total, senha);
-    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(pixPayload)}`;
-
-    payBox.innerHTML = `
-      <div class="pay-box-title">Pagamento via Pix</div>
-      <div class="price-highlight">${fmt(total)}</div>
-      <img src="${qrUrl}" class="qr-code-img" alt="QR Code Pix">
-      <div class="pay-instructions">
-        CNPJ: <strong>58.442.824/0001-00</strong><br>
-        Escaneie o código acima no app do banco.
-      </div>
-      <button class="confirm-pix-btn" id="manualPixConfirmBtn">✓ Já realizei o Pix</button>
-      <div id="paymentStatusContainer" style="margin-top:10px;"></div>
-    `;
-
-    document.getElementById('manualPixConfirmBtn').onclick = () => {
-      // 1. Atualiza no Firebase
-      db.ref(`orders/${orderId}`).update({ paid: true });
-
-      // 2. Dispara a Impressão
-      printReceipt(lastCreatedOrder);
-
-      // 3. Exibe a confirmação e volta à Tela Inicial após 2 segundos
-      const statusContainer = document.getElementById('paymentStatusContainer');
-      const btn = document.getElementById('manualPixConfirmBtn');
-      if (btn) btn.style.display = 'none';
-
-      if (statusContainer) {
-        statusContainer.innerHTML = `
-          <div class="payment-success-badge">
-            <span>✓</span> Pedido Concluído! Imprimindo...
-          </div>
-        `;
-      }
-
-      setTimeout(() => {
-        document.getElementById('confirmScreen').classList.remove('show');
-        document.getElementById('welcomeScreen').classList.remove('hide');
-      }, 2000);
-    };
-
-  } else {
-    payBox.innerHTML = `
-      <div class="pay-box-title">Pagamento no Cartão</div>
-      <div class="price-highlight">${fmt(total)}</div>
-      <div class="pay-instructions" style="margin-top:10px;">
-        Dirija-se ao balcão com a <strong>Senha #${senha}</strong> e informe o valor de <strong>${fmt(total)}</strong> para pagar na Maquininha Smart.
-      </div>
-    `;
-  }
-
-  document.getElementById('confirmScreen').classList.add('show');
-
-  cart = {};
-  document.getElementById('orderNotes').value = '';
-  renderMenu(); renderCartCount(); renderCartSheet();
-  closeCart();
-};
-
-document.getElementById('printReceiptBtn').onclick = () => {
-  printReceipt(lastCreatedOrder);
-};
-
-document.getElementById('newOrderBtn').onclick = ()=>{
-  document.getElementById('confirmScreen').classList.remove('show');
-  document.getElementById('welcomeScreen').classList.remove('hide');
-};
-
-renderCats();
-renderMenu();
-renderCartCount();
-renderCartSheet();
-</script>
 </body>
 </html>
