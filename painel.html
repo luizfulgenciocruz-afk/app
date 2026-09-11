@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Meu-Suíço Foods — Painel de Senhas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@700;800&family=Inter:wght@600;700;800;900&display=swap" rel="stylesheet">
+
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
+
+<style>
+  :root {
+    --red: #C8202B;
+    --red-dark: #720C13;
+    --amber: #FFC107;
+    --paper: #F8F9FA;
+    --ink: #111111;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background-color: var(--ink);
+    color: #FFFFFF;
+    font-family: 'Inter', sans-serif;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    user-select: none;
+  }
+
+  header {
+    background-color: var(--red);
+    padding: 16px 30px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+  }
+  .brand { display: flex; align-items: center; gap: 16px; }
+  .brand img { width: 56px; height: 56px; border-radius: 50%; border: 3px solid #FFF; object-fit: cover; }
+  .brand-title { font-family: 'Fraunces', serif; font-size: 32px; font-weight: 800; }
+  
+  .header-actions { display: flex; align-items: center; gap: 12px; }
+  .audio-notice { background: rgba(255,255,255,0.2); padding: 10px 18px; border-radius: 99px; font-size: 15px; font-weight: 700; cursor: pointer; border:none; color:#FFF; }
+  .reset-btn { background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.4); color: #FFF; padding: 10px 18px; border-radius: 99px; font-size: 14px; font-weight: 700; cursor: pointer; }
+
+  .main-layout { flex: 1; display: grid; grid-template-columns: 2fr 1fr; gap: 20px; padding: 30px; }
+
+  .current-card {
+    background: linear-gradient(145deg, #1E1E1E, #141414);
+    border: 4px solid var(--red);
+    border-radius: 28px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(200, 32, 43, 0.2);
+  }
+  .current-label { font-size: 32px; font-weight: 700; color: #AAAAAA; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px; }
+  .current-number { font-family: 'Fraunces', serif; font-size: 180px; font-weight: 800; color: var(--amber); line-height: 1; text-shadow: 0 0 30px rgba(255, 193, 7, 0.4); }
+
+  .history-panel { background: #181818; border-radius: 28px; padding: 24px; display: flex; flex-direction: column; border: 1px solid #333; }
+  .history-title { font-size: 22px; color: #888; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 1px; border-bottom: 2px solid #333; padding-bottom: 10px; }
+  .history-list { display: flex; flex-direction: column; gap: 16px; }
+  .history-item { background: #242424; padding: 18px 24px; border-radius: 16px; display: flex; justify-content: space-between; align-items: center; border-left: 6px solid var(--red); }
+  .history-item .num { font-family: 'Fraunces', serif; font-size: 42px; font-weight: 700; color: #FFFFFF; }
+  .history-item .time { font-size: 18px; color: #777; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <img src="https://raw.githubusercontent.com/luizfulgenciocruz-afk/app/main/logo.jpg" alt="Logo">
+    <div class="brand-title">Meu-Suíço Foods</div>
+  </div>
+  <div class="header-actions">
+    <button class="audio-notice" id="audioBtn">🔊 Ativar Som do Painel</button>
+    <button class="reset-btn" id="resetBtn">🔄 Zerar Senhas</button>
+  </div>
+</header>
+
+<div class="main-layout">
+  <div class="current-card" id="mainCard">
+    <div class="current-label">Senha Chamada</div>
+    <div class="current-number" id="currentSenha">--</div>
+  </div>
+
+  <div class="history-panel">
+    <div class="history-title">Últimas Chamadas</div>
+    <div class="history-list" id="historyList">
+      <div style="color:#555; text-align:center; margin-top:40px;">Nenhuma senha recente</div>
+    </div>
+  </div>
+</div>
+
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyCQxr8EkaR0bwdvX9KjZXbDshTo9B9jn24",
+  authDomain: "meu-su.firebaseapp.com",
+  databaseURL: "https://meu-su-default-rtdb.firebaseio.com",
+  projectId: "meu-su",
+  storageBucket: "meu-su.firebasestorage.app",
+  messagingSenderId: "123781955468",
+  appId: "1:123781955468:web:f4fd0a2824c43b48d9e0a9"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+let audioAllowed = false;
+let lastCalledTimestamp = 0;
+
+document.getElementById('audioBtn').onclick = () => {
+  audioAllowed = true;
+  document.getElementById('audioBtn').textContent = "🔊 Som Ativado";
+  document.getElementById('audioBtn').style.background = "#2E7D32";
+  playChime();
+};
+
+document.getElementById('resetBtn').onclick = () => {
+  if (confirm("Tem certeza que deseja zerar o painel e o histórico de senhas?")) {
+    db.ref('last_called').remove();
+    db.ref('called_history').remove();
+    db.ref('senha_counter').set(0);
+    document.getElementById('currentSenha').textContent = "--";
+    document.getElementById('historyList').innerHTML = `<div style="color:#555; text-align:center; margin-top:40px;">Nenhuma senha recente</div>`;
+  }
+};
+
+function playChime() {
+  if (!audioAllowed) return;
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc1 = ctx.createOscillator();
+    const gain1 = ctx.createGain();
+    osc1.frequency.setValueAtTime(523.25, ctx.currentTime);
+    gain1.gain.setValueAtTime(0.3, ctx.currentTime);
+    gain1.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.8);
+    osc1.connect(gain1);
+    gain1.connect(ctx.destination);
+    osc1.start(ctx.currentTime);
+    osc1.stop(ctx.currentTime + 0.8);
+  } catch(e) { console.error(e); }
+}
+
+function speakSenha(senha) {
+  if (!audioAllowed || !('speechSynthesis' in window)) return;
+  setTimeout(() => {
+    const msg = new SpeechSynthesisUtterance(`Senha, ${senha.split('').join(' ')}`);
+    msg.lang = 'pt-BR';
+    msg.rate = 0.9;
+    window.speechSynthesis.speak(msg);
+  }, 1000);
+}
+
+db.ref('last_called').on('value', snapshot => {
+  const data = snapshot.val();
+  if (!data) { document.getElementById('currentSenha').textContent = "--"; return; }
+  document.getElementById('currentSenha').textContent = `#${data.senha}`;
+
+  if (data.timestamp && data.timestamp !== lastCalledTimestamp) {
+    lastCalledTimestamp = data.timestamp;
+    playChime();
+    speakSenha(data.senha);
+    updateHistory();
+  }
+});
+
+function updateHistory() {
+  db.ref('called_history').limitToLast(5).once('value', snapshot => {
+    const list = document.getElementById('historyList');
+    if (!snapshot.exists()) { list.innerHTML = `<div style="color:#555; text-align:center; margin-top:40px;">Nenhuma senha anterior</div>`; return; }
+
+    const items = [];
+    snapshot.forEach(child => { items.unshift(child.val()); });
+    const historyItems = items.slice(1);
+
+    if (historyItems.length === 0) { list.innerHTML = `<div style="color:#555; text-align:center; margin-top:40px;">Nenhuma senha anterior</div>`; return; }
+
+    list.innerHTML = historyItems.map(h => {
+      const time = new Date(h.timestamp).toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+      return `<div class="history-item"><span class="num">#${h.senha}</span><span class="time">${time}</span></div>`;
+    }).join('');
+  });
+}
+</script>
+</body>
+</html>
