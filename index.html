@@ -41,15 +41,15 @@
     position: relative;
   }
   
-  /* MARCA D'ÁGUA DE FUNDO FIXA (OPACIDADE 50%) */
+  /* LOGO M-SUIÇO EM EMBED BASE64 COM OPACIDADE 50% */
   body::before {
     content: "";
     position: absolute;
     inset: 0;
-    background-image: url('logo.png');
+    background-image: url('https://raw.githubusercontent.com/luizfulgenciocruz-afk/app/main/logo.jpg');
     background-repeat: no-repeat;
     background-position: center;
-    background-size: 380px;
+    background-size: 340px;
     opacity: 0.50;
     z-index: 0;
     pointer-events: none;
@@ -93,8 +93,8 @@
   .section-title{font-size:26px; font-weight:700; margin:2px 0 16px 2px;}
   .grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(240px,1fr)); gap:16px;}
   .item-card{
-    background:rgba(255,255,255,0.88); border:1.5px solid var(--line); border-radius:16px;
-    padding:16px; display:flex; flex-direction:column; gap:8px; backdrop-filter: blur(4px);
+    background:rgba(255,255,255,0.85); border:1.5px solid var(--line); border-radius:16px;
+    padding:16px; display:flex; flex-direction:column; gap:8px; backdrop-filter: blur(3px);
   }
   .item-top{display:flex; gap:10px; align-items:flex-start;}
   .item-badge{
