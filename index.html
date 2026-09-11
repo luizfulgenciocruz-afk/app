@@ -176,8 +176,8 @@
   
   .confirm-pix-btn {
     background: var(--green); color: var(--white); border: none;
-    padding: 12px 16px; border-radius: 10px; font-weight: 800; font-size: 14px; cursor: pointer;
-    margin-top: 10px; width: 100%; box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    padding: 14px 16px; border-radius: 10px; font-weight: 800; font-size: 15px; cursor: pointer;
+    margin-top: 10px; width: 100%; box-shadow: 0 2px 6px rgba(0,0,0,0.15);
   }
 
   .print-btn {
@@ -207,21 +207,11 @@
   .status-preparo{background:var(--red-light); color:var(--red-dark);}
   .order-footer{display:flex; justify-content:space-between; align-items:center; margin-top:10px;}
   .orders-empty{text-align:center; color:var(--grey); padding:60px 20px; font-size:14px;}
-
-  @media print {
-    body * { visibility: hidden; }
-    #printableReceipt, #printableReceipt * { visibility: visible; }
-    #printableReceipt {
-      position: absolute; left: 0; top: 0; width: 58mm;
-      font-family: monospace; font-size: 12px; color: #000; padding: 4mm;
-    }
-    .no-print { display: none !important; }
-  }
 </style>
 </head>
 <body>
 
-<header class="topbar no-print">
+<header class="topbar">
   <div class="brand">
     <div style="width:40px; height:40px; background:#FFF; color:var(--red); border-radius:8px; display:flex; align-items:center; justify-content:center; font-family:'Fraunces'; font-weight:800; font-size:18px;">MS</div>
     <div>
@@ -241,16 +231,16 @@
   </div>
 </header>
 
-<nav class="cats no-print" id="catsNav"></nav>
+<nav class="cats" id="catsNav"></nav>
 
-<main id="mainMenu" class="no-print">
+<main id="mainMenu">
   <div id="menuContent"></div>
 </main>
 
-<main id="mainOrders" class="orders-view no-print" style="display:none;"></main>
+<main id="mainOrders" class="orders-view" style="display:none;"></main>
 
-<div class="overlay no-print" id="overlay"></div>
-<div class="sheet no-print" id="cartSheet">
+<div class="overlay" id="overlay"></div>
+<div class="sheet" id="cartSheet">
   <div class="sheet-header">
     <h2>Seu pedido</h2>
     <button class="close-x" id="closeCart">✕</button>
@@ -280,7 +270,7 @@
   </div>
 </div>
 
-<div class="confirm-screen no-print" id="confirmScreen">
+<div class="confirm-screen" id="confirmScreen">
   <div class="label-top">SUA SENHA DE ATENDIMENTO</div>
   <div class="senha-circle" id="senhaNumber">00</div>
   <h2>Pedido Enviado!</h2>
@@ -291,8 +281,6 @@
   <button class="print-btn" id="printReceiptBtn">🖨️ Imprimir Senha e Comprovante</button>
   <button class="primary-btn" id="newOrderBtn">Fazer novo pedido</button>
 </div>
-
-<div id="printableReceipt" style="display:none;"></div>
 
 <script>
 const PIX_KEY_CNPJ = "58442824000100";
@@ -343,7 +331,6 @@ let currentView = 'menu';
 let myOrders = [];
 let selectedPaymentMethod = 'pix';
 let lastCreatedOrder = null;
-let orderStatusListener = null;
 
 function fmt(v){ return 'R$ ' + v.toFixed(2).replace('.', ','); }
 
@@ -569,7 +556,10 @@ document.getElementById('sendBtn').onclick = async ()=>{
     `;
 
     document.getElementById('manualPixConfirmBtn').onclick = () => {
-      // Atualiza o estado visual no tablet do cliente
+      // 1. Atualiza o status do pedido para "pago" direto no Firebase Database
+      db.ref(`orders/${orderId}`).update({ paid: true });
+
+      // 2. Atualiza a tela do tablet imediatamente
       const statusContainer = document.getElementById('paymentStatusContainer');
       const btn = document.getElementById('manualPixConfirmBtn');
       if (btn) btn.style.display = 'none';
@@ -577,14 +567,12 @@ document.getElementById('sendBtn').onclick = async ()=>{
       if (statusContainer) {
         statusContainer.innerHTML = `
           <div class="payment-success-badge">
-            <span>✓</span> Pedido Enviado para a Cozinha!
+            <span>✓</span> Pagamento Registrado!
           </div>
-          <small style="color:var(--grey); display:block; margin-top:6px;">Aguardando validação do pagamento no balcão.</small>
+          <small style="color:var(--grey); display:block; margin-top:6px;">Seu pedido já foi enviado para a cozinha.</small>
         `;
       }
     };
-
-    listenPaymentConfirmation(orderId);
 
   } else {
     payBox.innerHTML = `
@@ -604,59 +592,38 @@ document.getElementById('sendBtn').onclick = async ()=>{
   closeCart();
 };
 
-function listenPaymentConfirmation(orderId) {
-  if (orderStatusListener) orderStatusListener.off();
-
-  orderStatusListener = db.ref(`orders/${orderId}`);
-  orderStatusListener.on('value', snapshot => {
-    const orderData = snapshot.val();
-    if (orderData && (orderData.paid === true || orderData.status === 'pronto' || orderData.status === 'entregue')) {
-      const statusContainer = document.getElementById('paymentStatusContainer');
-      const btn = document.getElementById('manualPixConfirmBtn');
-      if (btn) btn.style.display = 'none';
-
-      if (statusContainer) {
-        statusContainer.innerHTML = `
-          <div class="payment-success-badge">
-            <span>✓</span> Pagamento Confirmado!
-          </div>
-        `;
-      }
-    }
-  });
-}
-
+// IMPRESSÃO DIRETA
 document.getElementById('printReceiptBtn').onclick = () => {
   if (!lastCreatedOrder) return;
 
-  const receiptEl = document.getElementById('printableReceipt');
-  const itemsText = lastCreatedOrder.items.map(i => `${i.qty}x ${i.name} - ${fmt(i.qty * i.price)}`).join('<br>');
-  const dateStr = new Date(lastCreatedOrder.createdAt).toLocaleString('pt-BR');
+  const itemsText = lastCreatedOrder.items.map(i => `${i.qty}x ${i.name} (${fmt(i.qty * i.price)})`).join('%0A');
+  const dateStr = new Date(lastCreatedOrder.createdAt).toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
 
-  receiptEl.innerHTML = `
-    <div style="text-align:center; font-weight:bold; font-size:14px;">MEU-SUÍÇO FOODS</div>
-    <div style="text-align:center; margin-bottom:8px;">Comprovante de Pedido</div>
-    --------------------------------<br>
-    SENHA: <strong style="font-size:20px;">#${lastCreatedOrder.senha}</strong><br>
-    MESA: ${lastCreatedOrder.table}<br>
-    DATA: ${dateStr}<br>
-    PAGAMENTO: ${lastCreatedOrder.paymentMethod === 'pix' ? 'PIX' : 'CARTÃO (BALCÃO)'}<br>
-    --------------------------------<br>
-    ${itemsText}<br>
-    --------------------------------<br>
-    <strong>TOTAL: ${fmt(lastCreatedOrder.total)}</strong><br>
-    ${lastCreatedOrder.notes ? `Obs: ${lastCreatedOrder.notes}<br>` : ''}
-    --------------------------------<br>
-    <div style="text-align:center; margin-top:8px;">Obrigado pela preferência!</div>
-  `;
+  const receiptText = 
+    `MEU-SUICO FOODS%0A` +
+    `--------------------------------%0A` +
+    `SENHA: #${lastCreatedOrder.senha}%0A` +
+    `MESA: ${lastCreatedOrder.table}%0A` +
+    `HORA: ${dateStr}%0A` +
+    `PAGAMENTO: ${lastCreatedOrder.paymentMethod === 'pix' ? 'PIX' : 'CARTAO'}%0A` +
+    `--------------------------------%0A` +
+    `${itemsText}%0A` +
+    `--------------------------------%0A` +
+    `TOTAL: ${fmt(lastCreatedOrder.total)}%0A` +
+    `${lastCreatedOrder.notes ? `OBS: ${lastCreatedOrder.notes}%0A` : ''}` +
+    `--------------------------------%0A` +
+    `Obrigado pela preferencia!%0A%0A%0A`;
 
-  receiptEl.style.display = 'block';
-  window.print();
-  setTimeout(() => { receiptEl.style.display = 'none'; }, 1000);
+  const rawbtUrl = `intent:${receiptText}#Intent;scheme=rawbt;package=ru.a404m.rawbt;end;`;
+
+  try {
+    window.location.href = rawbtUrl;
+  } catch (e) {
+    window.print();
+  }
 };
 
 document.getElementById('newOrderBtn').onclick = ()=>{
-  if (orderStatusListener) orderStatusListener.off();
   document.getElementById('confirmScreen').classList.remove('show');
 };
 
