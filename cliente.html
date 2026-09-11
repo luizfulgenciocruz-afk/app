@@ -369,7 +369,20 @@ let lastCreatedOrder = null;
 
 function fmt(v){ return 'R$ ' + v.toFixed(2).replace('.', ','); }
 
+// FUNÇÃO PARA ENTRAR EM TELA CHEIA (FULLSCREEN)
+function requestFullScreen() {
+  const elem = document.documentElement;
+  if (elem.requestFullscreen) {
+    elem.requestFullscreen();
+  } else if (elem.webkitRequestFullscreen) { /* Safari / Chrome Android */
+    elem.webkitRequestFullscreen();
+  } else if (elem.msRequestFullscreen) { /* IE11 */
+    elem.msRequestFullscreen();
+  }
+}
+
 document.getElementById('startOrderBtn').onclick = () => {
+  requestFullScreen();
   document.getElementById('welcomeScreen').classList.add('hide');
 };
 
