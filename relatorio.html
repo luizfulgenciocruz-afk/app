@@ -70,10 +70,10 @@
   /* LAYOUT DE TABELAS */
   .sections-grid {
     display: grid;
-    grid-template-columns: 2fr 1fr;
+    grid-template-columns: 1.5fr 1fr;
     gap: 20px;
   }
-  @media (max-width: 800px) {
+  @media (max-width: 850px) {
     .sections-grid { grid-template-columns: 1fr; }
   }
 
@@ -90,11 +90,14 @@
     margin-bottom: 16px;
     padding-bottom: 8px;
     border-bottom: 2px solid var(--line);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
   }
 
   table { width: 100%; border-collapse: collapse; font-size: 14px; }
   th { text-align: left; padding: 10px; color: var(--grey); font-weight: 700; border-bottom: 1px solid var(--line); }
-  td { padding: 10px; border-bottom: 1px solid #F0F0F0; font-weight: 600; }
+  td { padding: 12px 10px; border-bottom: 1px solid #F0F0F0; font-weight: 600; }
   tr:last-child td { border-bottom: none; }
   
   .badge {
@@ -102,6 +105,21 @@
   }
   .badge-pix { background: #E3F2FD; color: #0D47A1; }
   .badge-card { background: #EDE7F6; color: #4A148C; }
+
+  .senha-badge {
+    font-family: 'Fraunces', serif;
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--red);
+    background: var(--paper);
+    padding: 4px 10px;
+    border-radius: 8px;
+    border: 1px solid var(--line);
+    display: inline-block;
+  }
+
+  .order-time { font-size: 12px; color: var(--grey); font-weight: 500; }
+  .items-summary { font-size: 13px; color: var(--grey); font-weight: 500; margin-top: 2px; }
 </style>
 </head>
 <body>
@@ -139,6 +157,27 @@
 </div>
 
 <div class="sections-grid">
+  <!-- HISTÓRICO DETALHADO POR SENHA -->
+  <div class="panel-box">
+    <div class="panel-title">
+      <span>🧾 Pedidos por Senha</span>
+      <span style="font-size: 13px; color: var(--grey); font-family: 'Inter', sans-serif;" id="lastOrdersLabel">Últimos lançamentos</span>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Senha</th>
+          <th>Itens do Pedido</th>
+          <th>Pagamento</th>
+          <th style="text-align: right;">Valor</th>
+        </tr>
+      </thead>
+      <tbody id="recentTransactionsList">
+        <tr><td colspan="4" style="text-align:center; color:var(--grey); padding: 40px;">Nenhum pedido registrado.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
   <!-- MAIS VENDIDOS -->
   <div class="panel-box">
     <div class="panel-title">🏆 Produtos Mais Vendidos</div>
@@ -146,29 +185,12 @@
       <thead>
         <tr>
           <th>Item</th>
-          <th style="text-align: center;">Qtd Vendida</th>
-          <th style="text-align: right;">Total Arrecadado</th>
+          <th style="text-align: center;">Qtd</th>
+          <th style="text-align: right;">Total</th>
         </tr>
       </thead>
       <tbody id="topItemsList">
-        <tr><td colspan="3" style="text-align:center; color:var(--grey);">Nenhum dado registrado ainda.</td></tr>
-      </tbody>
-    </table>
-  </div>
-
-  <!-- ULTIMAS TRANSAÇÕES -->
-  <div class="panel-box">
-    <div class="panel-title">💳 Histórico de Pedidos</div>
-    <table>
-      <thead>
-        <tr>
-          <th>Senha</th>
-          <th>Pagamento</th>
-          <th style="text-align: right;">Valor</th>
-        </tr>
-      </thead>
-      <tbody id="recentTransactionsList">
-        <tr><td colspan="3" style="text-align:center; color:var(--grey);">Nenhum pedido.</td></tr>
+        <tr><td colspan="3" style="text-align:center; color:var(--grey); padding: 40px;">Nenhum dado ainda.</td></tr>
       </tbody>
     </table>
   </div>
@@ -224,7 +246,7 @@ db.ref('orders').on('value', snapshot => {
     }
   });
 
-  // ATUALIZA CARDS
+  // ATUALIZA KPIs
   document.getElementById('totalRevenue').textContent = fmt(totalRev);
   document.getElementById('totalOrdersCount').textContent = `${orderList.length} pedidos realizados`;
   document.getElementById('pixRevenue').textContent = fmt(pixRev);
@@ -233,34 +255,46 @@ db.ref('orders').on('value', snapshot => {
   document.getElementById('cardCount').textContent = `${cardCnt} pedidos`;
   document.getElementById('avgTicket').textContent = fmt(orderList.length ? totalRev / orderList.length : 0);
 
-  // LISTA MAIS VENDIDOS
+  // HISTÓRICO DE PEDIDOS COM SENHA
+  const recentListEl = document.getElementById('recentTransactionsList');
+  recentListEl.innerHTML = orderList.reverse().map(o => {
+    const time = o.createdAt ? new Date(o.createdAt).toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'}) : '--:--';
+    const itemsText = o.items ? o.items.map(i => `${i.qty}x ${i.name}`).join(', ') : 'Sem itens';
+    
+    return `
+      <tr>
+        <td>
+          <span class="senha-badge">#${o.senha || '00'}</span>
+          <div class="order-time">${time}</div>
+        </td>
+        <td>
+          <div style="font-weight:700;">${itemsText}</div>
+          ${o.notes ? `<div class="items-summary">Obs: ${o.notes}</div>` : ''}
+        </td>
+        <td>
+          <span class="badge ${o.paymentMethod === 'pix' ? 'badge-pix' : 'badge-card'}">
+            ${o.paymentMethod === 'pix' ? 'Pix' : 'Cartão'}
+          </span>
+        </td>
+        <td style="text-align: right; font-weight:800; color:var(--red-dark);">${fmt(o.total)}</td>
+      </tr>
+    `;
+  }).join('');
+
+  // RANKING DE PRODUTOS
   const sortedItems = Object.entries(itemSales).sort((a,b) => b[1].qty - a[1].qty);
   const topListEl = document.getElementById('topItemsList');
   if(sortedItems.length === 0){
-    topListEl.innerHTML = `<tr><td colspan="3" style="text-align:center; color:var(--grey);">Nenhum dado registrado.</td></tr>`;
+    topListEl.innerHTML = `<tr><td colspan="3" style="text-align:center; color:var(--grey); padding: 40px;">Nenhum dado registrado.</td></tr>`;
   } else {
     topListEl.innerHTML = sortedItems.map(([name, stat]) => `
       <tr>
         <td>${name}</td>
         <td style="text-align: center;"><strong>${stat.qty}x</strong></td>
-        <td style="text-align: right;">${fmt(stat.total)}</td>
+        <td style="text-align: right; color:var(--green);">${fmt(stat.total)}</td>
       </tr>
     `).join('');
   }
-
-  // HISTÓRICO DE PEDIDOS
-  const recentListEl = document.getElementById('recentTransactionsList');
-  recentListEl.innerHTML = orderList.reverse().slice(0, 10).map(o => `
-    <tr>
-      <td><strong>#${o.senha}</strong></td>
-      <td>
-        <span class="badge ${o.paymentMethod === 'pix' ? 'badge-pix' : 'badge-card'}">
-          ${o.paymentMethod === 'pix' ? 'Pix' : 'Cartão'}
-        </span>
-      </td>
-      <td style="text-align: right;">${fmt(o.total)}</td>
-    </tr>
-  `).join('');
 });
 </script>
 </body>
