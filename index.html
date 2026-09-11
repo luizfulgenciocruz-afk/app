@@ -41,7 +41,46 @@
     position: relative;
   }
   
-  /* LOGO M-SUIÇO EM EMBED BASE64 COM OPACIDADE 50% */
+  /* TELA DE BOAS-VINDAS INICIAL */
+  .welcome-screen {
+    position: fixed; inset: 0; z-index: 50;
+    background: linear-gradient(135deg, var(--red-dark) 0%, var(--red) 100%);
+    color: var(--white); display: flex; flex-direction: column;
+    align-items: center; justify-content: center; text-align: center;
+    padding: 30px 24px; transition: transform 0.4s ease, opacity 0.4s ease;
+  }
+  .welcome-screen.hide {
+    transform: translateY(-100%);
+    opacity: 0;
+    pointer-events: none;
+  }
+  .welcome-logo-container {
+    width: 220px; height: 220px; border-radius: 50%;
+    background: var(--white); padding: 12px;
+    box-shadow: 0 12px 30px rgba(0,0,0,0.3);
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 24px; border: 6px solid rgba(255,255,255,0.25);
+  }
+  .welcome-logo-img {
+    width: 100%; height: 100%; border-radius: 50%; object-fit: cover;
+  }
+  .welcome-title {
+    font-family: 'Fraunces', serif; font-size: 38px; font-weight: 700;
+    margin: 0 0 8px 0; letter-spacing: 0.5px;
+  }
+  .welcome-subtitle {
+    font-size: 18px; opacity: 0.9; margin: 0 0 36px 0; font-weight: 500;
+  }
+  .start-order-btn {
+    background: var(--white); color: var(--red); border: none;
+    padding: 18px 48px; border-radius: 99px; font-weight: 800; font-size: 20px;
+    cursor: pointer; box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+    transition: transform 0.15s ease, background-color 0.2s ease;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .start-order-btn:active { transform: scale(0.96); }
+
+  /* MARCA D'ÁGUA DE FUNDO FIXA NO CARDÁPIO */
   body::before {
     content: "";
     position: absolute;
@@ -50,7 +89,7 @@
     background-repeat: no-repeat;
     background-position: center;
     background-size: 340px;
-    opacity: 0.50;
+    opacity: 0.25;
     z-index: 0;
     pointer-events: none;
   }
@@ -93,7 +132,7 @@
   .section-title{font-size:26px; font-weight:700; margin:2px 0 16px 2px;}
   .grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(240px,1fr)); gap:16px;}
   .item-card{
-    background:rgba(255,255,255,0.85); border:1.5px solid var(--line); border-radius:16px;
+    background:rgba(255,255,255,0.88); border:1.5px solid var(--line); border-radius:16px;
     padding:16px; display:flex; flex-direction:column; gap:8px; backdrop-filter: blur(3px);
   }
   .item-top{display:flex; gap:10px; align-items:flex-start;}
@@ -209,6 +248,18 @@
 </head>
 <body>
 
+<!-- TELA INICIAL DE BOAS-VINDAS -->
+<div class="welcome-screen" id="welcomeScreen">
+  <div class="welcome-logo-container">
+    <img src="https://raw.githubusercontent.com/luizfulgenciocruz-afk/app/main/logo.jpg" alt="Meu-Suíço Logo" class="welcome-logo-img">
+  </div>
+  <h1 class="welcome-title">Meu-Suíço Foods</h1>
+  <p class="welcome-subtitle">Seja bem-vindo! Faça o seu pedido no tablet.</p>
+  <button class="start-order-btn" id="startOrderBtn">
+    <span>COMEÇAR PEDIDO</span> ➔
+  </button>
+</div>
+
 <header class="topbar">
   <div class="brand">
     <div style="width:44px; height:44px; background:#FFF; color:var(--red); border-radius:10px; display:flex; align-items:center; justify-content:center; font-family:'Fraunces'; font-weight:800; font-size:20px;">MS</div>
@@ -320,6 +371,11 @@ let selectedPaymentMethod = 'pix';
 let lastCreatedOrder = null;
 
 function fmt(v){ return 'R$ ' + v.toFixed(2).replace('.', ','); }
+
+// CONTROLE DA TELA DE BOAS-VINDAS
+document.getElementById('startOrderBtn').onclick = () => {
+  document.getElementById('welcomeScreen').classList.add('hide');
+};
 
 function getPixCode(key, name, city, value, txid = "***") {
   function emv(id, val) {
@@ -573,7 +629,7 @@ document.getElementById('sendBtn').onclick = async ()=>{
       // 2. Dispara a Impressão
       printReceipt(lastCreatedOrder);
 
-      // 3. Exibe a confirmação e volta à página inicial após 2 segundos
+      // 3. Exibe a confirmação e volta à Tela Inicial após 2 segundos
       const statusContainer = document.getElementById('paymentStatusContainer');
       const btn = document.getElementById('manualPixConfirmBtn');
       if (btn) btn.style.display = 'none';
@@ -588,6 +644,7 @@ document.getElementById('sendBtn').onclick = async ()=>{
 
       setTimeout(() => {
         document.getElementById('confirmScreen').classList.remove('show');
+        document.getElementById('welcomeScreen').classList.remove('hide');
       }, 2000);
     };
 
@@ -615,6 +672,7 @@ document.getElementById('printReceiptBtn').onclick = () => {
 
 document.getElementById('newOrderBtn').onclick = ()=>{
   document.getElementById('confirmScreen').classList.remove('show');
+  document.getElementById('welcomeScreen').classList.remove('hide');
 };
 
 renderCats();
