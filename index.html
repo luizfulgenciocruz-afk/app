@@ -26,6 +26,7 @@
     justify-content: center;
     padding: 20px;
     text-align: center;
+    position: relative;
   }
 
   .logo-container {
@@ -41,8 +42,8 @@
   .hub-grid {
     display: flex;
     flex-direction: column;
-    gap: 16px;
-    width: min(400px, 100%);
+    gap: 18px;
+    width: min(420px, 100%);
   }
 
   .hub-card {
@@ -50,9 +51,9 @@
     border: 2px solid #333;
     color: #FFF;
     text-decoration: none;
-    padding: 20px;
-    border-radius: 16px;
-    font-size: 18px;
+    padding: 22px;
+    border-radius: 18px;
+    font-size: 19px;
     font-weight: 700;
     display: flex;
     align-items: center;
@@ -67,7 +68,81 @@
     transform: translateY(-2px);
   }
 
-  .hub-card span { font-size: 24px; }
+  .hub-card.admin-btn {
+    border-color: #444;
+  }
+
+  .hub-card span { font-size: 22px; }
+
+  /* MODAL DE NAVEGAÇÃO DA ADMINISTRAÇÃO */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(6px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    padding: 20px;
+  }
+  .modal-overlay.show { display: flex; }
+
+  .modal-card {
+    background: #1B1B1B;
+    border: 2px solid var(--red);
+    border-radius: 24px;
+    padding: 28px 24px;
+    width: min(400px, 100%);
+    box-shadow: 0 10px 32px rgba(200, 32, 43, 0.3);
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .modal-title {
+    font-family: 'Fraunces', serif;
+    font-size: 24px;
+    color: #FFF;
+    margin-bottom: 4px;
+  }
+
+  .modal-sub {
+    font-size: 14px;
+    color: #AAA;
+    margin-bottom: 12px;
+  }
+
+  .admin-menu-btn {
+    background: #282828;
+    border: 1.5px solid #444;
+    color: #FFF;
+    text-decoration: none;
+    padding: 16px;
+    border-radius: 14px;
+    font-size: 16px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: all 0.2s ease;
+  }
+  .admin-menu-btn:hover, .admin-menu-btn:active {
+    background: var(--red);
+    border-color: var(--red);
+  }
+
+  .close-modal-btn {
+    background: transparent;
+    border: none;
+    color: #888;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 10px;
+    text-decoration: underline;
+  }
+  .close-modal-btn:hover { color: #FFF; }
 </style>
 </head>
 <body>
@@ -77,31 +152,52 @@
 </div>
 
 <h1>Meu-Suíço Foods</h1>
-<p>Selecione o ambiente que deseja acessar:</p>
+<p>Selecione o tipo de acesso:</p>
 
 <div class="hub-grid">
+  <!-- BOTÃO DO CLIENTE (SEM SENHA) -->
   <a href="cliente.html" class="hub-card">
     <span>📱 Tablet do Cliente</span> ➔
   </a>
-  <a href="cozinha.html" class="hub-card">
-    <span>👨‍🍳 Tela da Cozinha</span> ➔
-  </a>
-  <a href="painel.html" class="hub-card">
-    <span>📺 Painel de Senhas</span> ➔
-  </a>
-  <button onclick="openRelatorio()" class="hub-card" style="border-color: #555; width: 100%; text-align: left;">
-    <span>📊 Relatório de Vendas</span> ➔
+
+  <!-- BOTÃO ADMINISTRADOR (EXIGE SENHA 9963) -->
+  <button onclick="openAdminArea()" class="hub-card admin-btn">
+    <span>🔐 Área Administrativa</span> ➔
   </button>
 </div>
 
+<!-- MODAL COM MÓDULOS DA ADMINISTRAÇÃO -->
+<div class="modal-overlay" id="adminModal">
+  <div class="modal-card">
+    <div class="modal-title">Painel de Controle</div>
+    <div class="modal-sub">Selecione o módulo que deseja acessar:</div>
+
+    <a href="cozinha.html" class="admin-menu-btn">
+      <span>👨‍🍳 Tela da Cozinha</span> ➔
+    </a>
+    <a href="painel.html" class="admin-menu-btn">
+      <span>📺 Painel de Senhas</span> ➔
+    </a>
+    <a href="relatorio.html" class="admin-menu-btn">
+      <span>📊 Relatório de Vendas</span> ➔
+    </a>
+
+    <button class="close-modal-btn" onclick="closeAdminArea()">✕ Fechar Menu</button>
+  </div>
+</div>
+
 <script>
-function openRelatorio() {
-  const pass = prompt("Digite a senha do Relatório:");
+function openAdminArea() {
+  const pass = prompt("Acesso Restrito. Digite a senha administrativa:");
   if (pass === "9963") {
-    window.location.href = "relatorio.html";
+    document.getElementById('adminModal').classList.add('show');
   } else if (pass !== null) {
-    alert("Senha incorreta!");
+    alert("Senha incorreta! Acesso negado.");
   }
+}
+
+function closeAdminArea() {
+  document.getElementById('adminModal').classList.remove('show');
 }
 </script>
 
