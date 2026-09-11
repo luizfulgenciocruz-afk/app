@@ -15,10 +15,16 @@
     --ink: #111111;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
+  body, html {
     background-color: var(--ink);
     color: #FFFFFF;
     font-family: 'Inter', sans-serif;
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+  }
+
+  .main-container {
     min-height: 100vh;
     display: flex;
     flex-direction: column;
@@ -26,7 +32,6 @@
     justify-content: center;
     padding: 20px;
     text-align: center;
-    position: relative;
   }
 
   .logo-container {
@@ -72,6 +77,18 @@
 
   .hub-card.admin-btn { border-color: #444; }
   .hub-card span { font-size: 22px; }
+
+  /* IFRAME FULLSCREEN */
+  #clientAppFrame {
+    display: none;
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    border: none;
+    z-index: 999;
+    background: #FFF;
+  }
 
   /* MODAL DE NAVEGAÇÃO DA ADMINISTRAÇÃO */
   .modal-overlay {
@@ -136,26 +153,29 @@
 </head>
 <body>
 
-<div class="logo-container">
-  <img src="logo.jpg" alt="Logo">
+<div class="main-container" id="mainHub">
+  <div class="logo-container">
+    <img src="logo.jpg" alt="Logo">
+  </div>
+
+  <h1>Meu-Suíço Foods</h1>
+  <p>Selecione o tipo de acesso:</p>
+
+  <div class="hub-grid">
+    <button onclick="launchClientTablet()" class="hub-card">
+      <span>📱 Tablet do Cliente</span> ➔
+    </button>
+
+    <button onclick="openAdminArea()" class="hub-card admin-btn">
+      <span>🔐 Área Administrativa</span> ➔
+    </button>
+  </div>
 </div>
 
-<h1>Meu-Suíço Foods</h1>
-<p>Selecione o tipo de acesso:</p>
+<!-- IFRAME ONDE O TABLET É CARREGADO EM TELA CHEIA PERMANENTE -->
+<iframe id="clientAppFrame" src="about:blank"></iframe>
 
-<div class="hub-grid">
-  <!-- BOTÃO DO CLIENTE (ENTRA EM TELA CHEIA NA HORA) -->
-  <button onclick="openClientTablet()" class="hub-card">
-    <span>📱 Tablet do Cliente</span> ➔
-  </button>
-
-  <!-- BOTÃO ADMINISTRADOR (EXIGE SENHA 9963) -->
-  <button onclick="openAdminArea()" class="hub-card admin-btn">
-    <span>🔐 Área Administrativa</span> ➔
-  </button>
-</div>
-
-<!-- MODAL COM MÓDULOS DA ADMINISTRAÇÃO -->
+<!-- MODAL DA ADMINISTRAÇÃO -->
 <div class="modal-overlay" id="adminModal">
   <div class="modal-card">
     <div class="modal-title">Painel de Controle</div>
@@ -176,18 +196,22 @@
 </div>
 
 <script>
-function openClientTablet() {
-  const elem = document.documentElement;
-  if (elem.requestFullscreen) {
-    elem.requestFullscreen();
-  } else if (elem.webkitRequestFullscreen) {
-    elem.webkitRequestFullscreen();
-  } else if (elem.msRequestFullscreen) {
-    elem.msRequestFullscreen();
+function launchClientTablet() {
+  const docEl = document.documentElement;
+  
+  // SOLICITA TELA CHEIA NO CLIQUE DIRETO DO USUÁRIO
+  if (docEl.requestFullscreen) {
+    docEl.requestFullscreen();
+  } else if (docEl.webkitRequestFullscreen) {
+    docEl.webkitRequestFullscreen();
+  } else if (docEl.msRequestFullscreen) {
+    docEl.msRequestFullscreen();
   }
-  setTimeout(() => {
-    window.location.href = "cliente.html";
-  }, 150);
+
+  // CARREGA O TABLET DENTRO DA MESMA PÁGINA SEM MUDAR DE URL
+  const frame = document.getElementById('clientAppFrame');
+  frame.src = "cliente.html";
+  frame.style.display = "block";
 }
 
 function openAdminArea() {
