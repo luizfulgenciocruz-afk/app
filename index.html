@@ -58,6 +58,7 @@
     align-items: center;
     justify-content: space-between;
     transition: all 0.2s ease;
+    cursor: pointer;
   }
 
   .hub-card:hover, .hub-card:active {
@@ -88,10 +89,21 @@
   <a href="painel.html" class="hub-card">
     <span>📺 Painel de Senhas</span> ➔
   </a>
-  <a href="relatorio.html" class="hub-card" style="border-color: #555;">
+  <button onclick="openRelatorio()" class="hub-card" style="border-color: #555; width: 100%; text-align: left;">
     <span>📊 Relatório de Vendas</span> ➔
-  </a>
+  </button>
 </div>
+
+<script>
+function openRelatorio() {
+  const pass = prompt("Digite a senha do Relatório:");
+  if (pass === "9963") {
+    window.location.href = "relatorio.html";
+  } else if (pass !== null) {
+    alert("Senha incorreta!");
+  }
+}
+</script>
 
 </body>
 </html>
