@@ -214,9 +214,8 @@
   .price-highlight { font-family: 'Fraunces'; font-weight: 800; font-size: 24px; color: var(--red-dark); margin: 6px 0; }
   
   .confirm-pix-btn { background: var(--green); color: var(--white); border: none; padding: 16px; border-radius: 12px; font-weight: 800; font-size: 16px; cursor: pointer; margin-top: 12px; width: 100%; }
-  .print-btn { background: #241F1D; color: #FFF; border: none; padding: 14px 24px; border-radius: 12px; font-weight: 700; font-size: 15px; cursor: pointer; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; justify-content: center; width: min(350px, 100%); }
   .payment-success-badge { background: var(--green-light); color: var(--green); border: 2px solid var(--green); padding: 16px; border-radius: 12px; font-weight: 800; font-size: 16px; display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 12px; }
-  .confirm-screen button.primary-btn { background: var(--white); color: var(--red); border: none; padding: 14px 30px; border-radius: 12px; font-weight: 800; font-size: 15px; cursor: pointer; }
+  .confirm-screen button.primary-btn { background: var(--white); color: var(--red); border: none; padding: 14px 30px; border-radius: 12px; font-weight: 800; font-size: 15px; cursor: pointer; margin-top: 10px; }
 
   @media print {
     body * { visibility: hidden; }
@@ -225,7 +224,7 @@
       position: absolute; left: 0; top: 0; width: 100%;
       background: #FFF !important; color: #000 !important;
     }
-    .print-btn, .primary-btn, .confirm-pix-btn, .pay-box { display: none !important; }
+    .primary-btn, .confirm-pix-btn, .pay-box { display: none !important; }
   }
 </style>
 </head>
@@ -301,7 +300,6 @@
 
   <div class="pay-box" id="payBox"></div>
 
-  <button class="print-btn" id="printReceiptBtn">🖨️ Imprimir Senha e Comprovante</button>
   <button class="primary-btn" id="newOrderBtn">Fazer novo pedido</button>
 </div>
 
@@ -574,12 +572,13 @@ function printReceipt(order) {
   const dateStr = new Date(order.createdAt).toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
 
   const receiptText = 
-    `MEU-SUICO FOODS%0A` +
+    `MEU SUISSO FOODS%0A` +
     `--------------------------------%0A` +
-    `SENHA: #${order.senha}%0A` +
+    `SENHA: ${order.senha}%0A` +
     `HORA: ${dateStr}%0A` +
     `PAGAMENTO: ${order.paymentMethod === 'pix' ? 'PIX' : 'CARTAO'}%0A` +
     `--------------------------------%0A` +
+    `RESUMO DO PEDIDO:%0A` +
     `${itemsText}%0A` +
     `--------------------------------%0A` +
     `TOTAL: ${fmt(order.total)}%0A` +
@@ -587,7 +586,6 @@ function printReceipt(order) {
     `--------------------------------%0A` +
     `Obrigado pela preferencia!%0A%0A%0A`;
 
-  // CAMINHO CORRIGIDO DO PACOTE DO RAWBT NO PLAY STORE
   const rawbtUrl = `intent:${receiptText}#Intent;scheme=rawbt;package=ru.a402d.rawbtprinter;end;`;
 
   try { 
@@ -637,6 +635,8 @@ document.getElementById('sendBtn').onclick = async ()=>{
     document.getElementById('manualPixConfirmBtn').onclick = () => {
       ensureFullscreen();
       db.ref(`orders/${orderId}`).update({ paid: true });
+      
+      // DISPARA A IMPRESSÃO AUTOMÁTICA AO CLICAR NO JÁ REALIZEI O PIX
       printReceipt(lastCreatedOrder);
 
       const btn = document.getElementById('manualPixConfirmBtn');
@@ -657,9 +657,28 @@ document.getElementById('sendBtn').onclick = async ()=>{
       <div class="pay-box-title">Pagamento no Cartão</div>
       <div class="price-highlight">${fmt(total)}</div>
       <div class="pay-instructions" style="margin-top:10px;">
-        Dirija-se ao balcão com a <strong>Senha #${senha}</strong> e informe o valor de <strong>${fmt(total)}</strong> para pagar na Maquininha Smart.
+        Dirija-se ao balcão com a <strong>Senha ${senha}</strong> e informe o valor de <strong>${fmt(total)}</strong> para pagar na Maquininha Smart.
       </div>
+      <button class="confirm-pix-btn" id="manualCardConfirmBtn">✓ Imprimir e Finalizar</button>
+      <div id="paymentStatusContainer" style="margin-top:10px;"></div>
     `;
+
+    document.getElementById('manualCardConfirmBtn').onclick = () => {
+      ensureFullscreen();
+      printReceipt(lastCreatedOrder);
+
+      const btn = document.getElementById('manualCardConfirmBtn');
+      if (btn) btn.style.display = 'none';
+
+      document.getElementById('paymentStatusContainer').innerHTML = `
+        <div class="payment-success-badge"><span>✓</span> Pedido Concluído! Imprimindo...</div>
+      `;
+
+      setTimeout(() => {
+        document.getElementById('confirmScreen').classList.remove('show');
+        document.getElementById('welcomeScreen').classList.remove('hide');
+      }, 2000);
+    };
   }
 
   document.getElementById('confirmScreen').classList.add('show');
@@ -668,8 +687,6 @@ document.getElementById('sendBtn').onclick = async ()=>{
   document.getElementById('orderNotes').value = '';
   renderFullMenu(); renderCartCount(); renderCartSheet(); closeCart();
 };
-
-document.getElementById('printReceiptBtn').onclick = () => { ensureFullscreen(); printReceipt(lastCreatedOrder); };
 
 document.getElementById('newOrderBtn').onclick = ()=>{
   ensureFullscreen();
