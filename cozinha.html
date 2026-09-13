@@ -22,6 +22,7 @@
     --card-bg: #1E1E1E;
     --red: #C8202B;
     --green: #2E7D32;
+    --blue: #0288D1;
     --white: #FFFFFF;
     --grey: #888888;
     --line: #333333;
@@ -44,7 +45,7 @@
   h1 { font-family: 'Fraunces', serif; font-size: 28px; }
   .grid-orders {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
     gap: 20px;
   }
   .order-card {
@@ -58,7 +59,7 @@
   }
   .order-card.ready {
     border-color: var(--green);
-    opacity: 0.6;
+    opacity: 0.75;
   }
   .order-header {
     display: flex;
@@ -74,36 +75,44 @@
   }
   .order-time { font-size: 14px; color: var(--grey); }
   .order-items { list-style: none; display: flex; flex-direction: column; gap: 8px; margin: 10px 0; }
-  .order-item-row { font-size: 16px; font-weight: 600; }
+  .order-item-row { font-size: 17px; font-weight: 700; }
   .order-notes {
     background: rgba(200,32,43,0.15);
     border-left: 3px solid var(--red);
     padding: 8px 12px;
-    font-size: 13px;
+    font-size: 13.5px;
     border-radius: 4px;
     color: #FFAAAA;
   }
+  .actions-container {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: auto;
+  }
   .action-btn {
-    background: var(--green);
-    color: var(--white);
     border: none;
     padding: 14px;
     border-radius: 10px;
     font-weight: 800;
-    font-size: 16px;
+    font-size: 15px;
     cursor: pointer;
-    margin-top: auto;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
   }
-  .action-btn.undo {
-    background: #444;
-  }
+  .btn-call { background: var(--blue); color: var(--white); }
+  .btn-done { background: var(--green); color: var(--white); }
+  .btn-undo { background: #444; color: var(--white); }
 </style>
 </head>
 <body>
 
 <header>
   <h1>👨‍🍳 Cozinha — Meu-Suíço Foods</h1>
-  <div id="clock" style="font-weight:700; color:var(--grey);">--:--</div>
+  <div id="clock" style="font-weight:700; color:var(--grey); font-size: 18px;">--:--</div>
 </header>
 
 <div class="grid-orders" id="ordersGrid"></div>
@@ -142,16 +151,28 @@ db.ref('orders').on('value', snapshot => {
       </ul>
       ${order.notes ? `<div class="order-notes">OBS: ${order.notes}</div>` : ''}
       
-      ${order.status === 'pronto'
-        ? `<button class="action-btn undo" onclick="setStatus('${order.id}', 'preparo')">Reabrir Pedido</button>`
-        : `<button class="action-btn" onclick="setStatus('${order.id}', 'pronto')">✓ Marcar como Pronto</button>`
-      }
+      <div class="actions-container">
+        <button class="action-btn btn-call" onclick="chamarSenha('${order.senha}')">📣 Chamar no Painel</button>
+        
+        ${order.status === 'pronto'
+          ? `<button class="action-btn btn-undo" onclick="setStatus('${order.id}', 'preparo')">↩ Reabrir Pedido</button>`
+          : `<button class="action-btn btn-done" onclick="setStatus('${order.id}', 'pronto')">✓ Marcar como Pronto</button>`
+        }
+      </div>
     </div>
   `).join('');
 });
 
 function setStatus(id, status){
   db.ref(`orders/${id}`).update({ status: status });
+}
+
+function chamarSenha(senha){
+  // Atualiza a senha chamada mais recente para tocar o aviso sonoro no painel.html
+  db.ref('last_called_senha').set({
+    senha: senha,
+    calledAt: Date.now()
+  });
 }
 </script>
 </body>
