@@ -168,7 +168,7 @@ function setStatus(id, status){
 }
 
 function chamarSenha(senha){
-  // Atualiza a senha chamada mais recente para tocar o aviso sonoro no painel.html
+  // Grava a senha chamada com timestamp único para forçar o disparo no Painel
   db.ref('last_called_senha').set({
     senha: senha,
     calledAt: Date.now()
