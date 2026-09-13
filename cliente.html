@@ -310,39 +310,39 @@ const MERCHANT_CITY = "SAO JOSE DOS P";
 
 const MENU = [
   { id:"cat-bebidas", cat:"Bebidas", icon:"🥤", items:[
-    {id:"b1", name:"Água Normal", desc:"", price:4.00},
-    {id:"b2", name:"Água com Gás", desc:"", price:4.00},
-    {id:"b3", name:"Soda Italiana Maçã Verde", desc:"500ml", price:15.00},
-    {id:"b4", name:"Soda Italiana Morango", desc:"500ml", price:15.00},
-    {id:"b5", name:"Soda Italiana Gengibre", desc:"500ml", price:15.00},
-    {id:"b6", name:"Soda Italiana Limão Siciliano", desc:"500ml", price:15.00},
-    {id:"b7", name:"Soda Italiana Jabuticaba", desc:"500ml", price:15.00},
-    {id:"b8", name:"Soda Italiana Tangerina", desc:"500ml", price:15.00},
+    {id:"b1", name:"Água Normal", desc:"", price:4.00, catType:""},
+    {id:"b2", name:"Água com Gás", desc:"", price:4.00, catType:""},
+    {id:"b3", name:"Soda Italiana Maçã Verde", desc:"500ml", price:15.00, catType:""},
+    {id:"b4", name:"Soda Italiana Morango", desc:"500ml", price:15.00, catType:""},
+    {id:"b5", name:"Soda Italiana Gengibre", desc:"500ml", price:15.00, catType:""},
+    {id:"b6", name:"Soda Italiana Limão Siciliano", desc:"500ml", price:15.00, catType:""},
+    {id:"b7", name:"Soda Italiana Jabuticaba", desc:"500ml", price:15.00, catType:""},
+    {id:"b8", name:"Soda Italiana Tangerina", desc:"500ml", price:15.00, catType:""},
   ]},
   { id:"cat-frances", cat:"Crepe Francês", icon:"🥞", items:[
-    {id:"cf1", name:"Queijo e Orégano", desc:"", price:25.00},
-    {id:"cf2", name:"Queijo c/ Milho e Requeijão", desc:"", price:25.00},
-    {id:"cf3", name:"Pizza", desc:"Queijo, tomate, orégano e requeijão", price:25.00},
-    {id:"cf4", name:"Queijo c/ Azeitona e Requeijão", desc:"", price:25.00},
-    {id:"cf5", name:"Chocolate ao Leite", desc:"", price:25.00},
-    {id:"cf6", name:"Chocolate Branco", desc:"", price:25.00},
-    {id:"cf7", name:"Sonho de Valsa", desc:"", price:25.00},
-    {id:"cf8", name:"Nutella com Morango", desc:"", price:25.00},
-    {id:"cf9", name:"Nutella com Banana", desc:"", price:25.00},
-    {id:"cf10", name:"Prestígio", desc:"", price:25.00},
+    {id:"cf1", name:"Queijo e Orégano", desc:"", price:25.00, catType:"[CF]"},
+    {id:"cf2", name:"Queijo c/ Milho e Requeijão", desc:"", price:25.00, catType:"[CF]"},
+    {id:"cf3", name:"Pizza", desc:"Queijo, tomate, orégano e requeijão", price:25.00, catType:"[CF]"},
+    {id:"cf4", name:"Queijo c/ Azeitona e Requeijão", desc:"", price:25.00, catType:"[CF]"},
+    {id:"cf5", name:"Chocolate ao Leite", desc:"", price:25.00, catType:"[CF]"},
+    {id:"cf6", name:"Chocolate Branco", desc:"", price:25.00, catType:"[CF]"},
+    {id:"cf7", name:"Sonho de Valsa", desc:"", price:25.00, catType:"[CF]"},
+    {id:"cf8", name:"Nutella com Morango", desc:"", price:25.00, catType:"[CF]"},
+    {id:"cf9", name:"Nutella com Banana", desc:"", price:25.00, catType:"[CF]"},
+    {id:"cf10", name:"Prestígio", desc:"", price:25.00, catType:"[CF]"},
   ]},
   { id:"cat-suico", cat:"Crepe Suíço", icon:"🍢", items:[
-    {id:"cs1", name:"Queijo", desc:"", price:16.00},
-    {id:"cs2", name:"Pizza", desc:"", price:16.00},
-    {id:"cs3", name:"Queijo e Milho", desc:"", price:16.00},
-    {id:"cs4", name:"Queijo e Azeitona", desc:"", price:16.00},
-    {id:"cs5", name:"Chocolate ao Leite", desc:"", price:16.00},
-    {id:"cs6", name:"Chocolate Branco", desc:"", price:16.00},
-    {id:"cs7", name:"Banana e Canela", desc:"", price:16.00},
-    {id:"cs8", name:"Prestígio", desc:"", price:16.00},
-    {id:"cs9", name:"Sonho de Valsa", desc:"", price:16.00},
-    {id:"cs10", name:"Bis", desc:"", price:16.00},
-    {id:"cs11", name:"Stikadinho", desc:"", price:16.00},
+    {id:"cs1", name:"Queijo", desc:"", price:16.00, catType:"[CS]"},
+    {id:"cs2", name:"Pizza", desc:"", price:16.00, catType:"[CS]"},
+    {id:"cs3", name:"Queijo e Milho", desc:"", price:16.00, catType:"[CS]"},
+    {id:"cs4", name:"Queijo e Azeitona", desc:"", price:16.00, catType:"[CS]"},
+    {id:"cs5", name:"Chocolate ao Leite", desc:"", price:16.00, catType:"[CS]"},
+    {id:"cs6", name:"Chocolate Branco", desc:"", price:16.00, catType:"[CS]"},
+    {id:"cs7", name:"Banana e Canela", desc:"", price:16.00, catType:"[CS]"},
+    {id:"cs8", name:"Prestígio", desc:"", price:16.00, catType:"[CS]"},
+    {id:"cs9", name:"Sonho de Valsa", desc:"", price:16.00, catType:"[CS]"},
+    {id:"cs10", name:"Bis", desc:"", price:16.00, catType:"[CS]"},
+    {id:"cs11", name:"Stikadinho", desc:"", price:16.00, catType:"[CS]"},
   ]},
 ];
 
@@ -568,11 +568,16 @@ function getPixCode(key, name, city, value, txid = "***") {
 
 function printReceipt(order) {
   if (!order) return;
-  const itemsText = order.items.map(i => `${i.qty}x ${i.name} (${fmt(i.qty * i.price)})`).join('%0A');
+  // GERA A LISTA INCLUINDO AS SIGLAS [CF] E [CS] CONFORME A CATEGORIA DO PRODUTO
+  const itemsText = order.items.map(i => {
+    const prefix = i.catType ? `${i.catType} ` : '';
+    return `${i.qty}x ${prefix}${i.name} (${fmt(i.qty * i.price)})`;
+  }).join('%0A');
+
   const dateStr = new Date(order.createdAt).toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
 
   const receiptText = 
-    `MEU SUISSO FOODS%0A` +
+    `MEU-SUICO FOODS%0A` +
     `--------------------------------%0A` +
     `SENHA: ${order.senha}%0A` +
     `HORA: ${dateStr}%0A` +
@@ -607,7 +612,12 @@ document.getElementById('sendBtn').onclick = async ()=>{
 
   const order = {
     id: orderId, senha: senha,
-    items: entries.map(c=>({ name:c.item.name, qty:c.qty, price:c.item.price })),
+    items: entries.map(c=>({ 
+      name: c.item.name, 
+      qty: c.qty, 
+      price: c.item.price,
+      catType: c.item.catType || '' 
+    })),
     total: total, notes: notes, paymentMethod: selectedPaymentMethod,
     paid: false, status: 'preparo', createdAt: new Date().toISOString(),
   };
@@ -635,8 +645,6 @@ document.getElementById('sendBtn').onclick = async ()=>{
     document.getElementById('manualPixConfirmBtn').onclick = () => {
       ensureFullscreen();
       db.ref(`orders/${orderId}`).update({ paid: true });
-      
-      // DISPARA A IMPRESSÃO AUTOMÁTICA AO CLICAR NO JÁ REALIZEI O PIX
       printReceipt(lastCreatedOrder);
 
       const btn = document.getElementById('manualPixConfirmBtn');
