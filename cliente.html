@@ -218,7 +218,6 @@
   .payment-success-badge { background: var(--green-light); color: var(--green); border: 2px solid var(--green); padding: 16px; border-radius: 12px; font-weight: 800; font-size: 16px; display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 12px; }
   .confirm-screen button.primary-btn { background: var(--white); color: var(--red); border: none; padding: 14px 30px; border-radius: 12px; font-weight: 800; font-size: 15px; cursor: pointer; }
 
-  /* IMPRESSÃO TÉRMICA FORMATADA PARA KNUP KP-607 VIA IMPRESSÃO SILENCIOSA */
   @media print {
     body * { visibility: hidden; }
     #confirmScreen, #confirmScreen * { visibility: visible; }
@@ -588,8 +587,9 @@ function printReceipt(order) {
     `--------------------------------%0A` +
     `Obrigado pela preferencia!%0A%0A%0A`;
 
-  // CHAMA O APP RAWBT NO ANDROID SE ESTIVER INSTALADO, OU O IMPRIMIR DO NAVEGADOR NO COMPUTADOR
-  const rawbtUrl = `intent:${receiptText}#Intent;scheme=rawbt;package=ru.a404m.rawbt;end;`;
+  // CAMINHO CORRIGIDO DO PACOTE DO RAWBT NO PLAY STORE
+  const rawbtUrl = `intent:${receiptText}#Intent;scheme=rawbt;package=ru.a402d.rawbtprinter;end;`;
+
   try { 
     window.location.href = rawbtUrl; 
   } catch (e) { 
